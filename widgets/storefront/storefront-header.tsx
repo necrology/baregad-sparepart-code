@@ -11,9 +11,13 @@ import { StorefrontSearch } from "@/widgets/storefront/storefront-search";
 
 type StorefrontHeaderProps = {
   branding: PublicAppConfig;
+  showAdminLogin?: boolean;
 };
 
-export function StorefrontHeader({ branding }: StorefrontHeaderProps) {
+export function StorefrontHeader({
+  branding,
+  showAdminLogin = true,
+}: StorefrontHeaderProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -71,12 +75,14 @@ export function StorefrontHeader({ branding }: StorefrontHeaderProps) {
             </span>
           </button>
 
-          <Link
-            href="/admin-login"
-            className="hidden rounded-full border border-brand-deep bg-brand px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(56,110,156,0.18)] transition hover:bg-brand-deep hover:text-white focus-visible:text-white lg:inline-flex"
-          >
-            Login Admin
-          </Link>
+          {showAdminLogin ? (
+            <Link
+              href="/admin-login"
+              className="hidden rounded-full border border-brand-deep bg-brand px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(56,110,156,0.18)] transition hover:bg-brand-deep hover:text-white focus-visible:text-white lg:inline-flex"
+            >
+              Login Admin
+            </Link>
+          ) : null}
         </div>
 
         <div className="pb-3">
@@ -109,13 +115,15 @@ export function StorefrontHeader({ branding }: StorefrontHeaderProps) {
                     </Link>
                   );
                 })}
-                <Link
-                  href="/admin-login"
-                  onClick={() => setIsOpen(false)}
-                  className="inline-flex justify-center rounded-xl border border-brand-deep bg-brand px-3 py-2.5 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(56,110,156,0.18)] transition hover:bg-brand-deep hover:text-white focus-visible:text-white"
-                >
-                  Login Admin
-                </Link>
+                {showAdminLogin ? (
+                  <Link
+                    href="/admin-login"
+                    onClick={() => setIsOpen(false)}
+                    className="inline-flex justify-center rounded-xl border border-brand-deep bg-brand px-3 py-2.5 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(56,110,156,0.18)] transition hover:bg-brand-deep hover:text-white focus-visible:text-white"
+                  >
+                    Login Admin
+                  </Link>
+                ) : null}
               </div>
             </div>
           </div>

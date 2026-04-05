@@ -263,6 +263,12 @@ export async function getProductBySlug(slug: string) {
   }
 }
 
+export async function getAllProductSlugs() {
+  const catalog = await getCatalog(defaultCatalogQuery);
+
+  return catalog.items.map((product) => product.slug);
+}
+
 export async function getFeaturedProducts(limit = 6) {
   const catalog = await getCatalog({ sort: "popular" });
   return catalog.items.slice(0, limit);

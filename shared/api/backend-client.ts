@@ -1,5 +1,6 @@
 import "server-only";
 import { getBackendRuntimeConfig } from "@/shared/config/env";
+import { isStaticExportEnabled } from "@/shared/config/static-export";
 import { buildSearchParams, type QueryRecord } from "@/shared/lib/query";
 
 type BackendFetchOptions = Omit<RequestInit, "body"> & {
@@ -38,13 +39,18 @@ export async function backendFetchJson<T>(
     url.searchParams.append(key, value);
   });
 
+  const method = options.method?.toUpperCase() ?? "GET";
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
 
   try {
     const response = await fetch(url, {
       ...options,
-      cache: options.cache ?? "no-store",
+      cache:
+        options.cache ??
+        (isStaticExportEnabled() && (method === "GET" || method === "HEAD")
+          ? "force-cache"
+          : "no-store"),
       headers: {
         Accept: "application/json",
         ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}),

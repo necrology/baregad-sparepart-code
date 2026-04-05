@@ -16,6 +16,8 @@
 # next.js
 /.next/
 /out/
+/out-static/
+/.next-static-workspace/
 
 # production
 /build

@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProductBySlug, getRelatedProducts } from "@/entities/product/api/product-service";
+import {
+  getProductBySlug,
+  getRelatedProducts,
+} from "@/entities/product/api/product-service";
 import { getApprovedProductReviews } from "@/entities/product-review/api/product-review-service";
 import { getStorefrontWhatsAppAdmins } from "@/entities/user/api/whatsapp-admin-service";
 import { getPublicAppConfig } from "@/shared/api/public-app-config-service";
+import { isStaticExportEnabled } from "@/shared/config/static-export";
 import { ProductCard } from "@/entities/product/ui/product-card";
 import { ProductWhatsAppPurchase } from "@/entities/product/ui/product-whatsapp-purchase";
 import { ProductPreview } from "@/entities/product/ui/product-preview";
@@ -42,6 +46,7 @@ export async function generateMetadata({
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { slug } = await params;
   const productResult = await getProductBySlug(slug);
+  const isStaticExport = isStaticExportEnabled();
 
   if (!productResult.item) {
     notFound();
@@ -252,61 +257,69 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
               tampil di storefront.
             </p>
 
-            <form
-              action="/api/product-reviews/create"
-              method="post"
-              className="mt-5 grid gap-3"
-            >
-              <input type="hidden" name="slug" value={slug} />
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-                  Nama
-                </span>
-                <input
-                  name="customerName"
-                  required
-                  placeholder="Contoh: Dimas Pratama"
-                  className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-                  Email
-                </span>
-                <input
-                  name="customerEmail"
-                  type="email"
-                  required
-                  placeholder="nama@email.com"
-                  className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-                />
-              </label>
-              <div>
-                <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-                  Rating
-                </span>
-                <RatingInput name="rating" defaultValue={5} />
+            {isStaticExport ? (
+              <div className="mt-5 rounded-[1.2rem] border border-line bg-white/70 p-4 text-sm leading-6 text-ink-soft">
+                Form review dinonaktifkan pada versi static export karena membutuhkan
+                endpoint server. Jalankan aplikasi dalam mode server untuk menerima
+                kiriman review baru.
               </div>
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-                  Komentar
-                </span>
-                <textarea
-                  name="comment"
-                  required
-                  rows={5}
-                  minLength={12}
-                  placeholder="Ceritakan pengalaman penggunaan, kualitas barang, atau proses pengirimannya."
-                  className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-                />
-              </label>
-              <button
-                type="submit"
-                className="rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-deep hover:text-white focus-visible:text-white"
+            ) : (
+              <form
+                action="/api/product-reviews/create"
+                method="post"
+                className="mt-5 grid gap-3"
               >
-                Kirim Review
-              </button>
-            </form>
+                <input type="hidden" name="slug" value={slug} />
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
+                    Nama
+                  </span>
+                  <input
+                    name="customerName"
+                    required
+                    placeholder="Contoh: Dimas Pratama"
+                    className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
+                    Email
+                  </span>
+                  <input
+                    name="customerEmail"
+                    type="email"
+                    required
+                    placeholder="nama@email.com"
+                    className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
+                  />
+                </label>
+                <div>
+                  <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
+                    Rating
+                  </span>
+                  <RatingInput name="rating" defaultValue={5} />
+                </div>
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
+                    Komentar
+                  </span>
+                  <textarea
+                    name="comment"
+                    required
+                    rows={5}
+                    minLength={12}
+                    placeholder="Ceritakan pengalaman penggunaan, kualitas barang, atau proses pengirimannya."
+                    className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  className="rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-deep hover:text-white focus-visible:text-white"
+                >
+                  Kirim Review
+                </button>
+              </form>
+            )}
           </div>
 
           <div className="space-y-4">
