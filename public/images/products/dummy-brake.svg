@@ -1,0 +1,20 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="url(#bg)"/>
+  <g opacity="0.18">
+    <circle cx="180" cy="180" r="120" stroke="white" stroke-width="28"/>
+    <circle cx="1040" cy="740" r="150" stroke="white" stroke-width="28"/>
+  </g>
+  <circle cx="600" cy="450" r="220" fill="#FEF2F2" fill-opacity="0.82"/>
+  <circle cx="600" cy="450" r="158" fill="none" stroke="#7F1D1D" stroke-width="56"/>
+  <circle cx="600" cy="450" r="42" fill="#991B1B"/>
+  <path d="M360 392C360 355 390 325 427 325H499V575H427C390 575 360 545 360 508V392Z" fill="#1F2937"/>
+  <path d="M701 325H773C810 325 840 355 840 392V508C840 545 810 575 773 575H701V325Z" fill="#1F2937"/>
+  <rect x="94" y="94" width="250" height="70" rx="35" fill="white" fill-opacity="0.18"/>
+  <text x="132" y="139" fill="white" font-size="34" font-family="Arial, sans-serif" font-weight="700">BRAKE PAD</text>
+  <defs>
+    <linearGradient id="bg" x1="80" y1="40" x2="1116" y2="846" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F97316"/>
+      <stop offset="1" stop-color="#991B1B"/>
+    </linearGradient>
+  </defs>
+</svg>

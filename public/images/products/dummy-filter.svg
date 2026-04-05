@@ -1,0 +1,17 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="url(#bg)"/>
+  <path d="M330 260H870V350C870 484 751 640 600 640C449 640 330 484 330 350V260Z" fill="#ECFDF5" fill-opacity="0.86"/>
+  <path d="M365 260H835V343C835 461 729 593 600 593C471 593 365 461 365 343V260Z" fill="#0F766E"/>
+  <path d="M451 308H503V560H451V308Z" fill="#99F6E4"/>
+  <path d="M574 308H626V560H574V308Z" fill="#99F6E4"/>
+  <path d="M697 308H749V560H697V308Z" fill="#99F6E4"/>
+  <rect x="330" y="214" width="540" height="72" rx="36" fill="#134E4A"/>
+  <rect x="110" y="100" width="220" height="70" rx="35" fill="white" fill-opacity="0.18"/>
+  <text x="145" y="145" fill="white" font-size="34" font-family="Arial, sans-serif" font-weight="700">FILTER</text>
+  <defs>
+    <linearGradient id="bg" x1="120" y1="80" x2="1118" y2="830" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#14B8A6"/>
+      <stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+  </defs>
+</svg>

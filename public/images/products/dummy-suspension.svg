@@ -1,0 +1,20 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="url(#bg)"/>
+  <path d="M488 186H712V714H488V186Z" fill="#F5F3FF" fill-opacity="0.9"/>
+  <path d="M520 220H680V278H520V220Z" fill="#4C1D95"/>
+  <path d="M520 622H680V680H520V622Z" fill="#4C1D95"/>
+  <path d="M520 302C560 332 640 332 680 302V344C640 374 560 374 520 344V302Z" fill="#C4B5FD"/>
+  <path d="M520 378C560 408 640 408 680 378V420C640 450 560 450 520 420V378Z" fill="#A78BFA"/>
+  <path d="M520 454C560 484 640 484 680 454V496C640 526 560 526 520 496V454Z" fill="#8B5CF6"/>
+  <path d="M520 530C560 560 640 560 680 530V572C640 602 560 602 520 572V530Z" fill="#7C3AED"/>
+  <circle cx="600" cy="166" r="54" fill="#312E81"/>
+  <circle cx="600" cy="734" r="54" fill="#312E81"/>
+  <rect x="96" y="96" width="310" height="70" rx="35" fill="white" fill-opacity="0.18"/>
+  <text x="134" y="141" fill="white" font-size="34" font-family="Arial, sans-serif" font-weight="700">SUSPENSION</text>
+  <defs>
+    <linearGradient id="bg" x1="84" y1="72" x2="1108" y2="838" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#4C1D95"/>
+    </linearGradient>
+  </defs>
+</svg>

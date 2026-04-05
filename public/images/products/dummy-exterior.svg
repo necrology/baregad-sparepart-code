@@ -1,0 +1,18 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="url(#bg)"/>
+  <path d="M254 570C254 528 288 494 330 494H870C912 494 946 528 946 570C946 612 912 646 870 646H330C288 646 254 612 254 570Z" fill="#EFF6FF" fill-opacity="0.9"/>
+  <path d="M336 558C336 526 362 500 394 500H806C838 500 864 526 864 558V582C864 614 838 640 806 640H394C362 640 336 614 336 582V558Z" fill="#111827"/>
+  <path d="M410 552H790" stroke="#E5E7EB" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="420" cy="570" r="44" fill="#BFDBFE"/>
+  <circle cx="780" cy="570" r="44" fill="#BFDBFE"/>
+  <path d="M364 316C364 250 418 196 484 196H716C782 196 836 250 836 316C836 418 736 486 600 486C464 486 364 418 364 316Z" fill="#F8FAFC" fill-opacity="0.9"/>
+  <path d="M600 244C636 296 712 314 712 370C712 430 668 466 600 466C532 466 488 430 488 370C488 314 564 296 600 244Z" fill="#2563EB"/>
+  <rect x="96" y="94" width="250" height="70" rx="35" fill="white" fill-opacity="0.18"/>
+  <text x="134" y="139" fill="white" font-size="34" font-family="Arial, sans-serif" font-weight="700">EXTERIOR</text>
+  <defs>
+    <linearGradient id="bg" x1="84" y1="74" x2="1122" y2="836" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/>
+      <stop offset="1" stop-color="#1E40AF"/>
+    </linearGradient>
+  </defs>
+</svg>
