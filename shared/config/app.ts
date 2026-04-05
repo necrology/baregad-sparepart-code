@@ -1,3 +1,6 @@
+const defaultSiteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://baregadsparepart.web.id";
+
 export type PublicAppConfig = {
   appName: string;
   appShortName: string;
@@ -26,7 +29,7 @@ export const defaultPublicAppConfig: PublicAppConfig = {
   brandCategoryLabel: "Sparepart Motor",
   logoUrl: "/baregad.jpg",
   faviconUrl: "/favicon.ico",
-  metadataBaseUrl: "https://baregad.example",
+  metadataBaseUrl: defaultSiteUrl,
   seoKeywords: [
     "sparepart motor",
     "parts motor",
