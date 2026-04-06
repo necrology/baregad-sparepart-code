@@ -1,5 +1,4 @@
 import { getPublicAppConfig } from "@/shared/api/public-app-config-service";
-import { isStaticExportEnabled } from "@/shared/config/static-export";
 import { Container } from "@/shared/ui/container";
 import { Logo } from "@/shared/ui/logo";
 import { StorefrontHeader } from "@/widgets/storefront/storefront-header";
@@ -10,14 +9,10 @@ type StorefrontShellProps = {
 
 export async function StorefrontShell({ children }: StorefrontShellProps) {
   const branding = await getPublicAppConfig();
-  const isStaticExport = isStaticExportEnabled();
 
   return (
     <div className="min-h-screen">
-      <StorefrontHeader
-        branding={branding}
-        showAdminLogin={!isStaticExport}
-      />
+      <StorefrontHeader branding={branding} />
 
       <main>{children}</main>
 

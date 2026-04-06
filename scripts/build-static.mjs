@@ -163,6 +163,24 @@ export default async function ProductDetailPage() {
   }
 }
 
+async function createStaticAdminLoginPage() {
+  const adminLoginDir = path.join(tempStorefrontAppDir, "admin-login");
+  const adminLoginPagePath = path.join(adminLoginDir, "page.tsx");
+
+  await rm(adminLoginDir, { recursive: true, force: true });
+  await mkdir(adminLoginDir, { recursive: true });
+  await writeFile(
+    adminLoginPagePath,
+    `import { StaticAdminLoginBridge } from "@/shared/ui/static-admin-login-bridge";
+
+export default function StaticAdminLoginPage() {
+  return <StaticAdminLoginBridge />;
+}
+`,
+    "utf8",
+  );
+}
+
 function runNextBuild(cwd) {
   const nextBin = path.join(cwd, "node_modules", "next", "dist", "bin", "next");
 
@@ -212,11 +230,8 @@ async function createTempWorkspace() {
     path.join(rootDir, "app", "(storefront)"),
     tempStorefrontAppDir,
   );
-  await rm(path.join(tempStorefrontAppDir, "admin-login"), {
-    recursive: true,
-    force: true,
-  });
   await createStaticProductPages();
+  await createStaticAdminLoginPage();
 
   await symlink(
     path.join(rootDir, "node_modules"),
