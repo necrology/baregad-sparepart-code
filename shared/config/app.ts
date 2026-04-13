@@ -1,3 +1,5 @@
+import { withBasePath } from "@/shared/config/base-path";
+
 const defaultSiteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://baregadsparepart.web.id";
 
@@ -23,23 +25,23 @@ export const defaultPublicAppConfig: PublicAppConfig = {
   appName: "Baregad Sparepart",
   appShortName: "Baregad",
   appDescription:
-    "Platform e-commerce sparepart motor dengan storefront customer dan dashboard admin yang siap dihubungkan ke backend API terpisah.",
+    "Tempat belanja sparepart motor yang rapi, mudah dicari, dan nyaman dipakai setiap hari.",
   appTagline:
-    "Belanja sparepart motor lebih cepat, lebih terstruktur, dan siap tumbuh untuk skala enterprise.",
+    "Cari sparepart motor lebih cepat dengan tampilan yang jelas dan pilihan barang yang terasa dekat.",
   brandCategoryLabel: "Sparepart Motor",
-  logoUrl: "/baregad.jpg",
-  faviconUrl: "/favicon.ico",
+  logoUrl: withBasePath("/baregad.jpg"),
+  faviconUrl: withBasePath("/favicon.ico"),
   metadataBaseUrl: defaultSiteUrl,
   seoKeywords: [
     "sparepart motor",
     "parts motor",
-    "e-commerce sparepart",
-    "dashboard admin sparepart",
+    "toko sparepart motor",
+    "jual sparepart motor",
   ],
   adminPanelName: "Baregad Admin",
-  adminPanelSubtitle: "Panel sparepart motor",
-  adminWorkspaceLabel: "Admin workspace",
-  adminWorkspaceTitle: "Kelola operasi sparepart lebih terstruktur",
+  adminPanelSubtitle: "Area pengelolaan toko",
+  adminWorkspaceLabel: "Ruang admin",
+  adminWorkspaceTitle: "Atur toko, katalog, dan pesanan dengan lebih nyaman",
   whatsappGreetingLabel: "admin Baregad",
   supportTeamLabel: "tim Baregad",
 };

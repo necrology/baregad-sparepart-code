@@ -1,6 +1,14 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
 import { getCatalog } from "@/entities/product/api/product-service";
 import { createSparepartCategoryShare } from "@/entities/product/model/sparepart-category";
-import { getAdminOverview } from "@/shared/api/admin-overview-service";
+import type { Product } from "@/entities/product/model/types";
+import {
+  getAdminOverview,
+  type AdminOverview,
+} from "@/shared/api/admin-overview-service";
+import { useAdminPageAccess } from "@/shared/auth/admin-page-access";
 import { formatRupiah } from "@/shared/lib/currency";
 import { formatDate } from "@/shared/lib/date";
 
@@ -11,12 +19,48 @@ const toneMap = {
   ink: "bg-[#e9f1f9] text-ink",
 } as const;
 
-export default async function AdminDashboardPage() {
-  const [overview, catalog] = await Promise.all([
-    getAdminOverview(),
-    getCatalog({ sort: "popular" }),
-  ]);
-  const categoryShare = createSparepartCategoryShare(catalog.items);
+export default function AdminDashboardPage() {
+  const { token, isAllowed, isReady } = useAdminPageAccess();
+  const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [catalogItems, setCatalogItems] = useState<Product[]>([]);
+
+  const loadDashboard = useCallback(async () => {
+    if (!token?.trim()) {
+      return;
+    }
+
+    const [nextOverview, catalog] = await Promise.all([
+      getAdminOverview(token),
+      getCatalog({ sort: "popular" }),
+    ]);
+
+    setOverview(nextOverview);
+    setCatalogItems(catalog.items);
+  }, [token]);
+
+  useEffect(() => {
+    if (!isAllowed) {
+      return;
+    }
+
+    const loadTimer = window.setTimeout(() => {
+      void loadDashboard();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(loadTimer);
+    };
+  }, [isAllowed, loadDashboard]);
+
+  if (!isReady || !isAllowed || !overview) {
+    return (
+      <div className="surface-panel rounded-[1.8rem] p-6 text-sm text-ink-soft">
+        Sedang menyiapkan ringkasan toko...
+      </div>
+    );
+  }
+
+  const categoryShare = createSparepartCategoryShare(catalogItems);
 
   return (
     <div className="space-y-3 sm:space-y-4">
@@ -46,14 +90,14 @@ export default async function AdminDashboardPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
-                Recent orders
+                Pesanan terbaru
               </p>
               <h2 className="mt-2 font-display text-3xl font-semibold text-ink">
-                Monitoring order terbaru
+                Pantau pesanan yang baru masuk
               </h2>
             </div>
             <span className="rounded-full border border-line bg-white/70 px-4 py-2 text-sm font-semibold text-ink-soft">
-              {overview.recentOrders.length} order dipantau
+              {overview.recentOrders.length} pesanan terlihat
             </span>
           </div>
           <div className="mt-4 space-y-2.5">
@@ -96,7 +140,7 @@ export default async function AdminDashboardPage() {
         <div className="space-y-3.5">
           <div className="surface-panel rounded-[2rem] p-4">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
-              Restock watch
+              Perhatian stok
             </p>
             <h2 className="mt-2 font-display text-2xl font-semibold text-ink">
               Produk stok tipis

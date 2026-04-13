@@ -1,8 +1,4 @@
-import "server-only";
-import { cookies } from "next/headers";
-import { BackendRequestError, backendFetchJson } from "@/shared/api/backend-client";
-
-export const ADMIN_AUTH_COOKIE = "baregad_admin_session";
+export const ADMIN_AUTH_STORAGE_KEY = "baregad_admin_session";
 
 export type AdminSession = {
   id: string;
@@ -21,39 +17,100 @@ export type AdminLoginResult = {
   user: AdminSession;
 };
 
-export async function getAdminAccessToken() {
-  const cookieStore = await cookies();
-  return cookieStore.get(ADMIN_AUTH_COOKIE)?.value?.trim() || null;
+export type StoredAdminAuth = {
+  token: string;
+  expiresAt: string;
+  expiresInSeconds: number;
+  user: AdminSession;
+};
+
+function isBrowser() {
+  return typeof window !== "undefined";
 }
 
-export async function getAdminAuthorizationHeaders() {
-  const token = await getAdminAccessToken();
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
 
-  if (!token) {
+function isAdminSession(value: unknown): value is AdminSession {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.username === "string" &&
+    typeof value.displayName === "string" &&
+    (value.role === "admin" || value.role === "staff") &&
+    typeof value.levelId === "string" &&
+    typeof value.levelName === "string" &&
+    typeof value.levelCode === "string"
+  );
+}
+
+export function createAdminAuthorizationHeaders(token: string | null | undefined) {
+  if (!token?.trim()) {
     return null;
   }
 
   return {
-    Authorization: `Bearer ${token}`,
+    Authorization: `Bearer ${token.trim()}`,
   };
 }
 
-export async function getAdminSession() {
-  const headers = await getAdminAuthorizationHeaders();
+export function isAdminAuthExpired(expiresAt: string | null | undefined) {
+  if (!expiresAt?.trim()) {
+    return true;
+  }
 
-  if (!headers) {
+  const expiresAtTime = Date.parse(expiresAt);
+  return !Number.isFinite(expiresAtTime) || expiresAtTime <= Date.now();
+}
+
+export function readStoredAdminAuth() {
+  if (!isBrowser()) {
     return null;
   }
 
   try {
-    return await backendFetchJson<AdminSession>("/admin/auth/me", {
-      headers,
-    });
-  } catch (error) {
-    if (error instanceof BackendRequestError && error.status === 401) {
+    const rawValue = window.localStorage.getItem(ADMIN_AUTH_STORAGE_KEY);
+
+    if (!rawValue) {
       return null;
     }
 
+    const parsed = JSON.parse(rawValue) as unknown;
+
+    if (
+      !isRecord(parsed) ||
+      typeof parsed.token !== "string" ||
+      typeof parsed.expiresAt !== "string" ||
+      !Number.isFinite(Number(parsed.expiresInSeconds)) ||
+      !isAdminSession(parsed.user)
+    ) {
+      return null;
+    }
+
+    return {
+      token: parsed.token,
+      expiresAt: parsed.expiresAt,
+      expiresInSeconds: Number(parsed.expiresInSeconds),
+      user: parsed.user,
+    } satisfies StoredAdminAuth;
+  } catch {
     return null;
   }
+}
+
+export function writeStoredAdminAuth(auth: StoredAdminAuth | AdminLoginResult) {
+  if (!isBrowser()) {
+    return;
+  }
+
+  window.localStorage.setItem(ADMIN_AUTH_STORAGE_KEY, JSON.stringify(auth));
+}
+
+export function clearStoredAdminAuth() {
+  if (!isBrowser()) {
+    return;
+  }
+
+  window.localStorage.removeItem(ADMIN_AUTH_STORAGE_KEY);
 }

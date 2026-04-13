@@ -1,4 +1,3 @@
-import "server-only";
 import {
   applyCatalogFilters,
   buildCatalogPayload,
@@ -19,7 +18,7 @@ import {
   resolveSparepartCategory,
 } from "@/entities/product/model/sparepart-category";
 import { backendFetchJson } from "@/shared/api/backend-client";
-import { getBackendRuntimeConfig } from "@/shared/config/env";
+import { getPublicBackendBaseUrl } from "@/shared/config/public-env";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -51,12 +50,6 @@ function normalizeProduct(value: unknown): Product | null {
   const rating = Number(value.rating ?? 0);
   const reviewCount = Number(value.reviewCount ?? value.review_count ?? 0);
   const soldCount = Number(value.soldCount ?? value.sold_count ?? 0);
-  const compareAtPrice =
-    value.compareAtPrice !== undefined && value.compareAtPrice !== null
-      ? Number(value.compareAtPrice)
-      : value.compare_at_price !== undefined && value.compare_at_price !== null
-        ? Number(value.compare_at_price)
-        : undefined;
 
   if (
     typeof value.id !== "string" ||
@@ -99,7 +92,6 @@ function normalizeProduct(value: unknown): Product | null {
       value.motorCodes ?? value.motor_codes ?? value.motorCode ?? value.motor_code,
     ),
     price,
-    compareAtPrice: Number.isFinite(compareAtPrice) ? compareAtPrice : undefined,
     stock: Number.isFinite(stock) ? stock : 0,
     rating: Number.isFinite(rating) ? rating : 0,
     reviewCount: Number.isFinite(reviewCount) ? reviewCount : 0,
@@ -183,7 +175,6 @@ function createEmptyCatalogPayload(query: CatalogQuery, backendAvailable: boolea
 }
 
 export async function getCatalog(query: CatalogQuery = defaultCatalogQuery) {
-  const config = getBackendRuntimeConfig();
   const normalizedCategory =
     normalizeSparepartCategoryQuery(query.category) ?? query.category;
   const normalizedQuery = {
@@ -198,7 +189,7 @@ export async function getCatalog(query: CatalogQuery = defaultCatalogQuery) {
       }
     : normalizedQuery;
 
-  if (!config.enabled) {
+  if (!getPublicBackendBaseUrl()) {
     return createEmptyCatalogPayload(normalizedQuery, false);
   }
 
@@ -233,9 +224,7 @@ export async function getCatalog(query: CatalogQuery = defaultCatalogQuery) {
 }
 
 export async function getProductBySlug(slug: string) {
-  const config = getBackendRuntimeConfig();
-
-  if (!config.enabled) {
+  if (!getPublicBackendBaseUrl()) {
     return {
       item: null,
       source: "backend" as const,
@@ -271,11 +260,6 @@ export async function getAllProductSlugs() {
 
 export async function getFeaturedProducts(limit = 6) {
   const catalog = await getCatalog({ sort: "popular" });
-  return catalog.items.slice(0, limit);
-}
-
-export async function getPromoProducts(limit = 4) {
-  const catalog = await getCatalog({ sort: "promo" });
   return catalog.items.slice(0, limit);
 }
 

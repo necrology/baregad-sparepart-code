@@ -1,20 +1,15 @@
-import "server-only";
 import type { ProductReview } from "@/entities/product-review/model/types";
 import { backendFetchJson } from "@/shared/api/backend-client";
-import { getAdminAuthorizationHeaders } from "@/shared/auth/admin-auth";
-import { getBackendRuntimeConfig } from "@/shared/config/env";
+import { getPublicBackendBaseUrl } from "@/shared/config/public-env";
 
-export async function getAdminProductReviews() {
-  const config = getBackendRuntimeConfig();
-  const headers = await getAdminAuthorizationHeaders();
-
-  if (!config.enabled || !headers) {
+export async function getAdminProductReviews(token: string | null | undefined) {
+  if (!getPublicBackendBaseUrl() || !token?.trim()) {
     return [] as ProductReview[];
   }
 
   try {
     return await backendFetchJson<ProductReview[]>("/admin/product-reviews", {
-      headers,
+      token,
     });
   } catch {
     return [] as ProductReview[];

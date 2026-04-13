@@ -1,57 +1,52 @@
+"use client";
+
 import Link from "next/link";
+import {
+  Suspense,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useId,
+  useState,
+} from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getCatalog } from "@/entities/product/api/product-service";
 import { sortCatalogProducts } from "@/entities/product/model/catalog";
+import {
+  DEFAULT_PRODUCT_IMAGE,
+  getProductImageSrc,
+} from "@/entities/product/model/product-images";
 import { createSparepartCategoryOptions } from "@/entities/product/model/sparepart-category";
-import type {
-  CatalogSort,
-  Product,
-  ProductSpecification,
-} from "@/entities/product/model/types";
-import { ProductPreview } from "@/entities/product/ui/product-preview";
+import type { CatalogSort, Product } from "@/entities/product/model/types";
+import { backendFetchJson } from "@/shared/api/backend-client";
+import { uploadAdminAsset } from "@/shared/api/admin-upload-service";
+import { useAdminPageAccess } from "@/shared/auth/admin-page-access";
+import {
+  buildProductPayload,
+  defaultProductAccent,
+} from "@/shared/lib/admin-product-form";
 import {
   adminPageSizeOptions,
   buildAdminPageHref,
-  matchesDateRange,
   matchesTextQuery,
   paginateItems,
   readNumberSearchParam,
   readSearchParam,
-  type SearchParamsRecord,
+  toSearchParamsRecord,
 } from "@/shared/lib/admin-list";
 import { cn } from "@/shared/lib/cn";
 import { formatRupiah } from "@/shared/lib/currency";
 import { formatDate } from "@/shared/lib/date";
-import { requireAdminPageAccess } from "@/shared/auth/admin-page-access";
+import { buildToastHref } from "@/shared/lib/toast";
+import { AdminBusyOverlay } from "@/shared/ui/admin-busy-overlay";
+import { AdminIconButton, AdminIconLink } from "@/shared/ui/admin-icon-action";
+import { AdminModal } from "@/shared/ui/admin-modal";
 import {
   AdminTableEmptyState,
   AdminTablePagination,
   AdminTableShell,
 } from "@/shared/ui/admin-table";
-import { AdminModal } from "@/shared/ui/admin-modal";
-import { AdminIconButton, AdminIconLink } from "@/shared/ui/admin-icon-action";
-import { EditIcon, TrashIcon } from "@/shared/ui/app-icons";
-
-type AdminProductsPageProps = {
-  searchParams?: Promise<SearchParamsRecord>;
-};
-
-type ProductFormFieldsProps = {
-  product?: Product | null;
-  brandOptions: string[];
-  vehicleOptions: string[];
-  categoryOptions: string[];
-  datalistPrefix: string;
-};
-
-const adminProductSortOptions = [
-  "latest",
-  "popular",
-  "promo",
-  "price-asc",
-  "price-desc",
-  "name-asc",
-  "name-desc",
-] as const;
+import { CloseIcon, EditIcon, TrashIcon } from "@/shared/ui/app-icons";
 
 function sortAdminProducts(products: Product[], sort: string) {
   switch (sort) {
@@ -63,498 +58,513 @@ function sortAdminProducts(products: Product[], sort: string) {
       return [...products].sort((left, right) =>
         right.name.localeCompare(left.name, "id-ID"),
       );
-    case "latest":
-    case "popular":
-    case "promo":
-    case "price-asc":
-    case "price-desc":
     default:
       return sortCatalogProducts(products, sort as CatalogSort);
   }
 }
 
-function createStats(products: Product[]) {
-  return [
-    { label: "Total SKU", value: String(products.length) },
-    {
-      label: "Produk Promo",
-      value: String(
-        products.filter((product) => product.compareAtPrice).length,
-      ),
-    },
-    {
-      label: "Stok Tipis",
-      value: String(
-        products.filter((product) => product.stock > 0 && product.stock <= 12)
-          .length,
-      ),
-    },
-  ];
-}
-
-function createTextAreaValue(values: string[]) {
-  return values.join("\n");
-}
-
-function createSpecificationValue(specifications: ProductSpecification[]) {
-  return specifications
-    .map((item) => `${item.label}: ${item.value}`)
-    .join("\n");
-}
-
-function getStockBadgeClass(stock: number) {
-  if (stock < 1) {
-    return "border border-line text-ink-soft";
-  }
-
-  if (stock <= 12) {
-    return "bg-accent-soft text-accent";
-  }
-
-  return "bg-brand-soft text-brand-deep";
-}
-
-function getStockLabel(stock: number) {
-  if (stock < 1) {
-    return "Backorder";
-  }
-
-  if (stock <= 12) {
-    return "Stok tipis";
-  }
-
-  return "Aman";
-}
-
-function ProductFormFields({
+function ProductFields({
   product,
   brandOptions,
   vehicleOptions,
   categoryOptions,
-  datalistPrefix,
-}: ProductFormFieldsProps) {
+}: {
+  product?: Product | null;
+  brandOptions: string[];
+  vehicleOptions: string[];
+  categoryOptions: string[];
+}) {
+  const brandOptionsId = useId();
+  const vehicleOptionsId = useId();
+  const hasProduct = !!product;
+  const joinSpecs = (items: Product["specifications"] = []) =>
+    items.map((item) => `${item.label}: ${item.value}`).join("\n");
+  const joinLines = (items: string[] = []) => items.join("\n");
+  const fieldClassName =
+    "w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm text-ink outline-none transition placeholder:text-ink-soft placeholder:opacity-100 focus:border-brand";
+  const fileFieldClassName =
+    "w-full rounded-xl border border-dashed border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition file:mr-3 file:rounded-full file:border-0 file:bg-brand-soft file:px-3 file:py-1.5 file:font-semibold file:text-brand-deep hover:border-brand";
+
   return (
     <>
-      <input type="hidden" name="existingImage" value={product?.image ?? ""} />
-
+      <input
+        name="name"
+        required
+        defaultValue={product?.name ?? ""}
+        placeholder="Nama produk, contoh: Kampas Rem Depan Vario 160"
+        className={fieldClassName}
+      />
       <label className="block">
         <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Nama produk
-        </span>
-        <input
-          name="name"
-          required
-          defaultValue={product?.name ?? ""}
-          placeholder="Contoh: Kampas Rem Depan Nissin Vario"
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Slug produk
+          Nama link produk di website
         </span>
         <input
           name="slug"
           defaultValue={product?.slug ?? ""}
-          placeholder="Boleh dikosongkan, slug akan dibentuk dari nama produk"
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
+          placeholder="Kosongkan saja jika ingin dibuat otomatis dari nama produk"
+          className={fieldClassName}
         />
+        <span className="mt-1 block text-xs text-ink-soft">
+          Dipakai pada alamat halaman produk, misalnya `kampas-rem-vario-160`.
+        </span>
       </label>
-      <label className="block">
+      <input
+        name="sku"
+        required
+        defaultValue={product?.sku ?? ""}
+        placeholder="Kode produk internal, contoh: KRM-V160-001"
+        className={fieldClassName}
+      />
+      <input
+        name="brand"
+        list={brandOptionsId}
+        required
+        defaultValue={product?.brand ?? ""}
+        placeholder="Merek produk, contoh: Honda Genuine Parts"
+        className={fieldClassName}
+      />
+      <datalist id={brandOptionsId}>
+        {brandOptions.map((option) => (
+          <option key={option} value={option} />
+        ))}
+      </datalist>
+      <select
+        name="category"
+        required
+        defaultValue={product?.category ?? categoryOptions[0] ?? ""}
+        className={fieldClassName}
+      >
+        {categoryOptions.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+      <input
+        name="vehicle"
+        list={vehicleOptionsId}
+        required
+        defaultValue={product?.vehicle ?? ""}
+        placeholder="Tipe kendaraan, contoh: Vario 160"
+        className={fieldClassName}
+      />
+      <datalist id={vehicleOptionsId}>
+        {vehicleOptions.map((option) => (
+          <option key={option} value={option} />
+        ))}
+      </datalist>
+      <input
+        name="price"
+        type="number"
+        min="0"
+        step="100"
+        required
+        defaultValue={hasProduct ? product.price : ""}
+        placeholder="Harga jual, contoh: 150000"
+        className={fieldClassName}
+      />
+      <input
+        name="stock"
+        type="number"
+        min="0"
+        required
+        defaultValue={hasProduct ? product.stock : ""}
+        placeholder="Jumlah stok, contoh: 24"
+        className={fieldClassName}
+      />
+      <input
+        name="rating"
+        type="number"
+        min="0"
+        max="5"
+        step="0.1"
+        required
+        defaultValue={hasProduct ? product.rating : ""}
+        placeholder="Rating produk, contoh: 4.8"
+        className={fieldClassName}
+      />
+      <input
+        name="reviewCount"
+        type="number"
+        min="0"
+        required
+        defaultValue={hasProduct ? product.reviewCount : ""}
+        placeholder="Jumlah ulasan, contoh: 12"
+        className={fieldClassName}
+      />
+      <input
+        name="soldCount"
+        type="number"
+        min="0"
+        required
+        defaultValue={hasProduct ? product.soldCount : ""}
+        placeholder="Jumlah terjual, contoh: 80"
+        className={fieldClassName}
+      />
+      <input
+        name="leadTime"
+        defaultValue={product?.leadTime ?? "Hubungi admin"}
+        placeholder="Estimasi proses, contoh: Dikirim hari ini"
+        className={fieldClassName}
+      />
+      <input
+        name="location"
+        defaultValue={product?.location ?? "Gudang pusat"}
+        placeholder="Lokasi stok, contoh: Gudang pusat"
+        className={fieldClassName}
+      />
+      <input
+        name="image"
+        defaultValue={product?.image ?? ""}
+        placeholder="Alamat gambar produk jika tidak upload file"
+        className={`md:col-span-2 ${fieldClassName}`}
+      />
+      <label className="md:col-span-2 block">
         <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          SKU
+          Upload gambar produk
         </span>
         <input
-          name="sku"
-          required
-          defaultValue={product?.sku ?? ""}
-          placeholder="Contoh: NIS-VAR-KR-01"
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
+          name="imageFile"
+          type="file"
+          accept="image/*,.svg,.ico"
+          className={fileFieldClassName}
         />
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Brand
+        <span className="mt-1 block text-xs text-ink-soft">
+          Opsional. Jika file dipilih, gambar akan diunggah lalu langsung dipakai
+          untuk barang ini.
         </span>
-        <input
-          name="brand"
-          list={`${datalistPrefix}-brands`}
-          required
-          defaultValue={product?.brand ?? ""}
-          placeholder="Contoh: Nissin"
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-        <datalist id={`${datalistPrefix}-brands`}>
-          {brandOptions.map((option) => (
-            <option key={option} value={option} />
-          ))}
-        </datalist>
       </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Kategori sparepart
-        </span>
-        <select
-          name="category"
-          required
-          defaultValue={product?.category ?? categoryOptions[0] ?? ""}
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        >
-          {categoryOptions.map((category) => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Tipe kendaraan
-        </span>
-        <input
-          name="vehicle"
-          list={`${datalistPrefix}-vehicles`}
-          required
-          defaultValue={product?.vehicle ?? ""}
-          placeholder="Contoh: Matic"
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-        <datalist id={`${datalistPrefix}-vehicles`}>
-          {vehicleOptions.map((option) => (
-            <option key={option} value={option} />
-          ))}
-        </datalist>
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Harga jual
-        </span>
-        <input
-          name="price"
-          type="number"
-          min="0"
-          step="100"
-          required
-          defaultValue={product?.price ?? 0}
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Harga coret
-        </span>
-        <input
-          name="compareAtPrice"
-          type="number"
-          min="0"
-          step="100"
-          defaultValue={product?.compareAtPrice ?? ""}
-          placeholder="Kosongkan jika tidak promo"
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Stok
-        </span>
-        <input
-          name="stock"
-          type="number"
-          min="0"
-          required
-          defaultValue={product?.stock ?? 0}
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Rating
-        </span>
-        <input
-          name="rating"
-          type="number"
-          min="0"
-          max="5"
-          step="0.1"
-          required
-          defaultValue={product?.rating ?? 0}
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Jumlah ulasan
-        </span>
-        <input
-          name="reviewCount"
-          type="number"
-          min="0"
-          required
-          defaultValue={product?.reviewCount ?? 0}
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Jumlah terjual
-        </span>
-        <input
-          name="soldCount"
-          type="number"
-          min="0"
-          required
-          defaultValue={product?.soldCount ?? 0}
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Lead time
-        </span>
-        <input
-          name="leadTime"
-          defaultValue={product?.leadTime ?? "Hubungi admin"}
-          placeholder="Contoh: Siap kirim hari ini"
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Lokasi stok
-        </span>
-        <input
-          name="location"
-          defaultValue={product?.location ?? "Gudang pusat"}
-          placeholder="Contoh: Gudang Jakarta"
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block md:col-span-2">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Ringkasan singkat
-        </span>
-        <textarea
-          name="shortDescription"
-          required
-          rows={3}
-          defaultValue={product?.shortDescription ?? ""}
-          placeholder="Ringkasan singkat yang tampil di card katalog."
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block md:col-span-2">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Deskripsi lengkap
-        </span>
-        <textarea
-          name="description"
-          required
-          rows={5}
-          defaultValue={product?.description ?? ""}
-          placeholder="Deskripsi detail produk untuk halaman produk."
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block md:col-span-2">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Kode motor
-        </span>
-        <textarea
-          name="motorCodes"
-          rows={4}
-          defaultValue={createTextAreaValue(product?.motorCodes ?? [])}
-          placeholder="Satu kode per baris atau pisahkan dengan koma. Contoh: Honda KPH"
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block md:col-span-2">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Kompatibilitas
-        </span>
-        <textarea
-          name="compatibility"
-          rows={4}
-          defaultValue={createTextAreaValue(product?.compatibility ?? [])}
-          placeholder="Satu item per baris. Contoh: Honda Vario 125 2023"
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block md:col-span-2">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Spesifikasi
-        </span>
-        <textarea
-          name="specifications"
-          rows={5}
-          defaultValue={createSpecificationValue(product?.specifications ?? [])}
-          placeholder="Format per baris: Label: Nilai"
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block md:col-span-2">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Tags
-        </span>
-        <textarea
-          name="tags"
-          rows={3}
-          defaultValue={createTextAreaValue(product?.tags ?? [])}
-          placeholder="Satu tag per baris atau pisahkan dengan koma."
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block md:col-span-2">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Badges
-        </span>
-        <textarea
-          name="badges"
-          rows={3}
-          defaultValue={createTextAreaValue(product?.badges ?? [])}
-          placeholder="Satu badge per baris. Contoh: Best Seller"
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Accent from
-        </span>
-        <input
-          name="accentFrom"
-          defaultValue={product?.accentFrom ?? "#f6a25b"}
-          placeholder="#f6a25b"
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Accent to
-        </span>
-        <input
-          name="accentTo"
-          defaultValue={product?.accentTo ?? "#c85f34"}
-          placeholder="#c85f34"
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-      <label className="block md:col-span-2">
-        <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-          Accent glow
-        </span>
-        <input
-          name="accentGlow"
-          defaultValue={product?.accentGlow ?? "rgba(200, 95, 52, 0.24)"}
-          placeholder="rgba(200, 95, 52, 0.24)"
-          className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-        />
-      </label>
-
-      <div className="rounded-[1.4rem] border border-dashed border-line bg-white/70 p-4 md:col-span-2">
-        <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">
-              Foto Produk
-            </p>
-            {product ? (
-              <div className="w-full max-w-[220px]">
-                <ProductPreview product={product} compact className="h-40" />
-              </div>
-            ) : (
-              <p className="text-sm leading-6 text-ink-soft">
-                Upload foto utama produk. Jika belum ada foto, storefront akan
-                memakai gambar default.
-              </p>
-            )}
-          </div>
-          <div className="space-y-3">
-            <label className="block">
-              <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-                Upload foto baru
-              </span>
-              <input
-                name="imageFile"
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/gif"
-                className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm text-ink outline-none transition file:mr-3 file:rounded-full file:border-0 file:bg-brand-soft file:px-3 file:py-2 file:text-xs file:font-semibold file:text-brand-deep hover:file:bg-brand-soft/80 focus:border-brand"
-              />
-            </label>
-            <p className="text-xs leading-6 text-ink-soft">
-              Format yang didukung: JPG, PNG, WEBP, GIF. Maksimal 5 MB.
-            </p>
-            {product?.image ? (
-              <label className="inline-flex items-center gap-3 rounded-[1.1rem] border border-line bg-white px-4 py-3 text-sm text-ink">
-                <input
-                  type="checkbox"
-                  name="removeImage"
-                  className="h-4 w-4 rounded border-line text-brand focus:ring-brand"
-                />
-                <span>
-                  Hapus foto lama jika tidak ingin menampilkan gambar produk
-                </span>
-              </label>
-            ) : null}
-            {product?.image ? (
-              <p className="text-xs leading-6 text-muted">
-                Path saat ini: {product.image}
-              </p>
-            ) : null}
-          </div>
+      <textarea
+        name="shortDescription"
+        required
+        rows={3}
+        defaultValue={product?.shortDescription ?? ""}
+        placeholder="Ringkasan singkat yang tampil di kartu produk"
+        className={`md:col-span-2 ${fieldClassName}`}
+      />
+      <textarea
+        name="description"
+        required
+        rows={4}
+        defaultValue={product?.description ?? ""}
+        placeholder="Deskripsi lengkap produk"
+        className={`md:col-span-2 ${fieldClassName}`}
+      />
+      <textarea
+        name="motorCodes"
+        rows={3}
+        defaultValue={joinLines(product?.motorCodes)}
+        placeholder="Kode motor, pisahkan dengan baris baru atau koma"
+        className={fieldClassName}
+      />
+      <textarea
+        name="compatibility"
+        rows={3}
+        defaultValue={joinLines(product?.compatibility)}
+        placeholder="Motor yang cocok, pisahkan dengan baris baru atau koma"
+        className={fieldClassName}
+      />
+      <textarea
+        name="specifications"
+        rows={4}
+        defaultValue={joinSpecs(product?.specifications)}
+        placeholder="Format: Nama spesifikasi: Nilai"
+        className={`md:col-span-2 ${fieldClassName}`}
+      />
+      <textarea
+        name="tags"
+        rows={3}
+        defaultValue={joinLines(product?.tags)}
+        placeholder="Kata kunci pencarian, pisahkan dengan baris baru atau koma"
+        className={fieldClassName}
+      />
+      <textarea
+        name="badges"
+        rows={3}
+        defaultValue={joinLines(product?.badges)}
+        placeholder="Label tambahan, contoh: Best Seller"
+        className={fieldClassName}
+      />
+      <details className="md:col-span-2 rounded-[1.4rem] border border-line bg-white/70 p-4">
+        <summary className="text-sm font-semibold text-ink">
+          Warna tampilan kartu produk
+        </summary>
+        <p className="mt-2 text-xs leading-6 text-ink-soft">
+          Boleh dibiarkan default. Bagian ini hanya mengatur nuansa warna kartu
+          produk di katalog.
+        </p>
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <input
+            name="accentFrom"
+            defaultValue={product?.accentFrom ?? defaultProductAccent.from}
+            placeholder="Warna awal gradasi, contoh: #f6a25b"
+            className={fieldClassName}
+          />
+          <input
+            name="accentTo"
+            defaultValue={product?.accentTo ?? defaultProductAccent.to}
+            placeholder="Warna akhir gradasi, contoh: #c85f34"
+            className={fieldClassName}
+          />
+          <input
+            name="accentGlow"
+            defaultValue={product?.accentGlow ?? defaultProductAccent.glow}
+            placeholder="Efek glow, contoh: rgba(200, 95, 52, 0.24)"
+            className={`md:col-span-2 ${fieldClassName}`}
+          />
         </div>
-      </div>
+      </details>
     </>
   );
 }
 
-export default async function AdminProductsPage({
-  searchParams,
-}: AdminProductsPageProps) {
-  await requireAdminPageAccess({
+function AdminProductsPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { token, isAllowed, isReady } = useAdminPageAccess({
     allowedRoles: ["admin"],
     allowedLevelCodes: ["admin", "admin-baregad"],
   });
+  const [products, setProducts] = useState<Product[]>([]);
+  const [brandOptions, setBrandOptions] = useState<string[]>([]);
+  const [vehicleOptions, setVehicleOptions] = useState<string[]>([]);
+  const [busyState, setBusyState] = useState<{
+    title: string;
+    description?: string;
+  } | null>(null);
+  const [createFormVersion, setCreateFormVersion] = useState(0);
+  const paramsRecord = toSearchParamsRecord(searchParams.entries());
+  const categoryOptions = createSparepartCategoryOptions();
 
-  const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const catalog = await getCatalog({ sort: "latest" });
-  const products = catalog.items;
-  const page = readNumberSearchParam(resolvedSearchParams, "page", 1);
+  const loadCatalog = useCallback(async () => {
+    const catalog = await getCatalog({ sort: "latest" });
+    setProducts(catalog.items);
+    setBrandOptions(catalog.options.brands);
+    setVehicleOptions(catalog.options.vehicles);
+  }, []);
+
+  useEffect(() => {
+    if (!isAllowed) {
+      return;
+    }
+
+    const loadTimer = window.setTimeout(() => {
+      void loadCatalog();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(loadTimer);
+    };
+  }, [isAllowed, loadCatalog]);
+
+  if (!isReady || !isAllowed) {
+    return (
+      <div className="surface-panel rounded-[1.8rem] p-6 text-sm text-ink-soft">
+        Sedang menyiapkan daftar barang...
+      </div>
+    );
+  }
+
+  const page = readNumberSearchParam(paramsRecord, "page", 1);
   const pageSize = readNumberSearchParam(
-    resolvedSearchParams,
+    paramsRecord,
     "pageSize",
     adminPageSizeOptions[0],
     adminPageSizeOptions,
   );
-  const q = readSearchParam(resolvedSearchParams, "q") ?? "";
-  const brand = readSearchParam(resolvedSearchParams, "brand") ?? "";
-  const category = readSearchParam(resolvedSearchParams, "category") ?? "";
-  const vehicle = readSearchParam(resolvedSearchParams, "vehicle") ?? "";
-  const motorCode = readSearchParam(resolvedSearchParams, "motorCode") ?? "";
-  const stockStatus =
-    readSearchParam(resolvedSearchParams, "stockStatus") ?? "";
-  const sort =
-    readSearchParam(resolvedSearchParams, "sort") ?? adminProductSortOptions[0];
-  const dateFrom = readSearchParam(resolvedSearchParams, "dateFrom");
-  const dateTo = readSearchParam(resolvedSearchParams, "dateTo");
-  const editProductId = readSearchParam(resolvedSearchParams, "edit") ?? "";
+  const q = readSearchParam(paramsRecord, "q") ?? "";
+  const brand = readSearchParam(paramsRecord, "brand") ?? "";
+  const category = readSearchParam(paramsRecord, "category") ?? "";
+  const vehicle = readSearchParam(paramsRecord, "vehicle") ?? "";
+  const stockStatus = readSearchParam(paramsRecord, "stockStatus") ?? "";
+  const sort = readSearchParam(paramsRecord, "sort") ?? "latest";
+  const editId = readSearchParam(paramsRecord, "edit") ?? "";
 
-  const navigationSearchParams: SearchParamsRecord = {
-    ...(resolvedSearchParams ?? {}),
+  const navParams = {
+    ...paramsRecord,
     toast: undefined,
     toastType: undefined,
     success: undefined,
     error: undefined,
   };
-  const listSearchParams: SearchParamsRecord = {
-    ...navigationSearchParams,
+  const listParams = {
+    ...navParams,
     edit: undefined,
   };
-  const listHref = buildAdminPageHref("/admin/produk", listSearchParams, {});
-  const editProduct =
-    products.find((product) => product.id === editProductId) ?? null;
-  const editReturnHref = editProduct
-    ? buildAdminPageHref("/admin/produk", navigationSearchParams, {
-        edit: editProduct.id,
-      })
+  const listHref = buildAdminPageHref("/admin/produk", listParams, {});
+  const editProduct = products.find((item) => item.id === editId) ?? null;
+  const editHref = editProduct
+    ? buildAdminPageHref("/admin/produk", navParams, { edit: editProduct.id })
     : listHref;
+
+  async function handleMutation(
+    pathname: string,
+    method: "POST" | "PUT" | "DELETE",
+    payload: unknown,
+    successMessage: string,
+    errorRedirect = listHref,
+  ) {
+    if (!token?.trim()) {
+      router.replace(
+        buildToastHref(errorRedirect, {
+          message: "Sesi login tidak ditemukan.",
+          tone: "error",
+        }),
+      );
+      return false;
+    }
+
+    try {
+      await backendFetchJson(pathname, { method, token, json: payload });
+      await loadCatalog();
+      router.replace(
+        buildToastHref(listHref, {
+          message: successMessage,
+          tone: "success",
+        }),
+      );
+      return true;
+    } catch (error) {
+      router.replace(
+        buildToastHref(errorRedirect, {
+          message:
+            error instanceof Error && error.message.trim()
+              ? error.message
+              : "Data barang belum bisa diproses.",
+          tone: "error",
+        }),
+      );
+      return false;
+    }
+  }
+
+  async function uploadProductImage(formData: FormData) {
+    if (!token?.trim()) {
+      return null;
+    }
+
+    const imageFile = formData.get("imageFile");
+
+    if (!(imageFile instanceof File) || imageFile.size < 1) {
+      return null;
+    }
+
+    return uploadAdminAsset({
+      token,
+      file: imageFile,
+      scope: "product-images",
+      kind: "image",
+    });
+  }
+
+  async function handleCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const dialog = form.closest("dialog");
+    const formData = new FormData(form);
+    let didCreate = false;
+
+    setBusyState({
+      title: "Menyimpan barang",
+      description: "Sedang menyimpan data barang dan gambar.",
+    });
+
+    try {
+      const uploadedImage = await uploadProductImage(formData);
+
+      if (uploadedImage) {
+        formData.set("image", uploadedImage.path);
+      }
+
+      didCreate = await handleMutation(
+        "/admin/products",
+        "POST",
+        buildProductPayload(formData),
+        "Barang berhasil ditambahkan.",
+      );
+    } catch (error) {
+      router.replace(
+        buildToastHref(listHref, {
+          message:
+            error instanceof Error && error.message.trim()
+              ? error.message
+              : "Gambar barang belum bisa diunggah.",
+          tone: "error",
+        }),
+      );
+    } finally {
+      setBusyState(null);
+
+      if (didCreate) {
+        form.reset();
+        dialog?.close();
+        setCreateFormVersion((current) => current + 1);
+      }
+    }
+  }
+
+  async function handleUpdate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const id = String(formData.get("id") ?? "").trim();
+
+    setBusyState({
+      title: "Menyimpan perubahan barang",
+      description: "Sedang menyimpan perubahan data barang.",
+    });
+
+    try {
+      const uploadedImage = await uploadProductImage(formData);
+
+      if (uploadedImage) {
+        formData.set("image", uploadedImage.path);
+      }
+
+      await handleMutation(
+        `/admin/products/${id}`,
+        "PUT",
+        buildProductPayload(formData),
+        "Perubahan barang berhasil disimpan.",
+        editHref,
+      );
+    } catch (error) {
+      router.replace(
+        buildToastHref(editHref, {
+          message:
+            error instanceof Error && error.message.trim()
+              ? error.message
+              : "Gambar barang belum bisa diunggah.",
+          tone: "error",
+        }),
+      );
+    } finally {
+      setBusyState(null);
+    }
+  }
+
+  async function handleDelete(product: Product) {
+    const confirmed = window.confirm(`Hapus barang "${product.name}"?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    setBusyState({
+      title: "Menghapus barang",
+      description: "Sedang menghapus barang dari daftar.",
+    });
+
+    try {
+      await handleMutation(
+        `/admin/products/${product.id}`,
+        "DELETE",
+        undefined,
+        "Barang berhasil dihapus.",
+      );
+    } finally {
+      setBusyState(null);
+    }
+  }
 
   const filteredProducts = sortAdminProducts(
     products.filter((product) => {
@@ -565,10 +575,8 @@ export default async function AdminProductsPage({
             product.sku,
             product.brand,
             product.category,
-            product.vehicle,
             product.shortDescription,
             ...product.motorCodes,
-            ...product.tags,
           ],
           q,
         )
@@ -579,104 +587,79 @@ export default async function AdminProductsPage({
       if (brand && product.brand !== brand) {
         return false;
       }
+
       if (category && product.category !== category) {
         return false;
       }
+
       if (vehicle && product.vehicle !== vehicle) {
         return false;
       }
-      if (motorCode && !product.motorCodes.includes(motorCode)) {
-        return false;
-      }
-      if (!matchesDateRange(product.updatedAt, dateFrom, dateTo)) {
+
+      if (stockStatus === "ready" && product.stock < 1) {
         return false;
       }
 
-      switch (stockStatus) {
-        case "ready":
-          return product.stock > 12;
-        case "low":
-          return product.stock > 0 && product.stock <= 12;
-        case "backorder":
-          return product.stock < 1;
-        default:
-          return true;
+      if (stockStatus === "low" && !(product.stock > 0 && product.stock <= 12)) {
+        return false;
       }
+
+      if (stockStatus === "backorder" && product.stock > 0) {
+        return false;
+      }
+
+      return true;
     }),
     sort,
   );
 
   const pagination = paginateItems(filteredProducts, page, pageSize);
-  const stats = createStats(filteredProducts);
-  const categoryOptions = createSparepartCategoryOptions();
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-4">
+      <AdminBusyOverlay
+        visible={!!busyState}
+        title={busyState?.title ?? ""}
+        description={busyState?.description}
+      />
+
       <section className="surface-panel rounded-[2rem] p-4">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
-          Product management
-        </p>
-        <h2 className="mt-2 font-display text-3xl font-semibold text-ink">
-          Kelola katalog, data produk, dan foto upload
-        </h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-ink-soft sm:text-base">
-          Master produk sekarang disiapkan untuk alur CRUD penuh, mulai dari
-          data inti, harga, stok, kompatibilitas, sampai upload foto agar admin
-          bisa mengelola katalog langsung dari dashboard.
-        </p>
-      </section>
-
-      <section className="grid gap-4 sm:grid-cols-3">
-        {stats.map((item) => (
-          <div
-            key={item.label}
-            className="surface-panel rounded-[1.8rem] p-3.5"
-          >
-            <p className="text-sm text-muted">{item.label}</p>
-            <p className="mt-3 font-display text-3xl font-semibold text-ink">
-              {item.value}
-            </p>
-          </div>
-        ))}
-      </section>
-
-      <section className="surface-panel rounded-[2rem] p-3.5 sm:p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h3 className="font-display text-2xl font-semibold text-ink">
-              Tambah produk baru
-            </h3>
-            <p className="mt-2 text-sm leading-7 text-ink-soft">
-              Isi data produk lengkap termasuk foto, spesifikasi,
-              kompatibilitas, dan kode motor agar produk siap tampil di
-              storefront.
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
+              Daftar barang
+            </p>
+            <h2 className="mt-2 font-display text-3xl font-semibold text-ink">
+              Kelola katalog barang
+            </h2>
+            <p className="mt-2 text-sm text-ink-soft">
+              Atur nama barang, foto, stok, dan informasi penting lainnya dari
+              satu tempat.
             </p>
           </div>
           <AdminModal
-            title="Tambah produk baru"
-            description="Gunakan form ini untuk membuat produk baru beserta foto utama, harga, stok, spesifikasi, dan data kompatibilitas."
-            triggerLabel="Tambah Produk"
+            title="Tambah Barang"
+            description="Lengkapi informasi barang lalu simpan."
+            triggerLabel="Tambah Barang"
             panelClassName="max-w-6xl"
           >
             <form
-              action="/api/admin-products/create"
-              method="post"
-              encType="multipart/form-data"
+              key={createFormVersion}
+              onSubmit={handleCreate}
               className="grid gap-3 md:grid-cols-2"
             >
-              <input type="hidden" name="redirectTo" value={listHref} />
-              <ProductFormFields
-                brandOptions={catalog.options.brands}
-                vehicleOptions={catalog.options.vehicles}
+              <ProductFields
+                brandOptions={brandOptions}
+                vehicleOptions={vehicleOptions}
                 categoryOptions={categoryOptions}
-                datalistPrefix="create-product"
               />
               <div className="md:col-span-2">
                 <button
                   type="submit"
-                  className="rounded-full border border-brand-deep bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-deep hover:text-white focus-visible:text-white"
+                  disabled={!!busyState}
+                  className="rounded-full border border-brand-deep bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-deep hover:text-white focus-visible:text-white disabled:cursor-not-allowed disabled:border-line disabled:bg-white/70 disabled:text-muted"
                 >
-                  Simpan Produk Baru
+                  {busyState ? "Memproses..." : "Simpan Barang"}
                 </button>
               </div>
             </form>
@@ -685,46 +668,38 @@ export default async function AdminProductsPage({
       </section>
 
       {editProduct ? (
-        <section className="surface-panel rounded-[2rem] p-3.5 sm:p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h3 className="font-display text-2xl font-semibold text-ink">
-                Edit produk
-              </h3>
-              <p className="mt-2 text-sm leading-7 text-ink-soft">
-                Perbarui data produk, foto, harga, stok, dan informasi tampil
-                untuk {editProduct.name}.
-              </p>
-            </div>
-            <Link
+        <section className="surface-panel rounded-[2rem] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="font-display text-2xl font-semibold text-ink">
+              Edit {editProduct.name}
+            </h3>
+            <AdminIconLink
               href={listHref}
-              className="rounded-full border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:bg-white/70"
-            >
-              Tutup Edit
-            </Link>
+              label="Tutup edit barang"
+              icon={<CloseIcon />}
+              tone="danger"
+            />
           </div>
-
           <form
-            action="/api/admin-products/update"
-            method="post"
-            encType="multipart/form-data"
-            className="mt-3.5 grid gap-3 md:grid-cols-2"
+            key={editProduct.id}
+            onSubmit={handleUpdate}
+            className="mt-4 grid gap-3 md:grid-cols-2"
           >
             <input type="hidden" name="id" value={editProduct.id} />
-            <input type="hidden" name="redirectTo" value={editReturnHref} />
-            <ProductFormFields
+            <input type="hidden" name="existingSlug" value={editProduct.slug} />
+            <ProductFields
               product={editProduct}
-              brandOptions={catalog.options.brands}
-              vehicleOptions={catalog.options.vehicles}
+              brandOptions={brandOptions}
+              vehicleOptions={vehicleOptions}
               categoryOptions={categoryOptions}
-              datalistPrefix="edit-product"
             />
-            <div className="md:col-span-2 flex flex-wrap gap-2">
+            <div className="md:col-span-2 flex gap-2">
               <button
                 type="submit"
-                className="rounded-full border border-brand-deep bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-deep hover:text-white focus-visible:text-white"
+                disabled={!!busyState}
+                className="rounded-full border border-brand-deep bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-deep hover:text-white focus-visible:text-white disabled:cursor-not-allowed disabled:border-line disabled:bg-white/70 disabled:text-muted"
               >
-                Simpan Perubahan
+                {busyState ? "Memproses..." : "Simpan"}
               </button>
               <Link
                 href={listHref}
@@ -737,164 +712,89 @@ export default async function AdminProductsPage({
         </section>
       ) : null}
 
-      <section className="surface-panel rounded-[2rem] p-3.5 sm:p-4">
-        <form method="get" className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <label className="block xl:col-span-2">
-            <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-              Cari nama, SKU, kategori, brand, atau kode motor
-            </span>
-            <input
-              name="q"
-              defaultValue={q}
-              placeholder="Contoh: kampas rem, Nissin, Honda KPH"
-              className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-              Brand
-            </span>
-            <select
-              name="brand"
-              defaultValue={brand}
-              className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-            >
-              <option value="">Semua brand</option>
-              {catalog.options.brands.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-              Kategori
-            </span>
-            <select
-              name="category"
-              defaultValue={category}
-              className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-            >
-              <option value="">Semua kategori</option>
-              {categoryOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-              Tipe motor
-            </span>
-            <select
-              name="vehicle"
-              defaultValue={vehicle}
-              className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-            >
-              <option value="">Semua tipe</option>
-              {catalog.options.vehicles.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-              Kode motor
-            </span>
-            <select
-              name="motorCode"
-              defaultValue={motorCode}
-              className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-            >
-              <option value="">Semua kode</option>
-              {catalog.options.motorCodes.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-              Status stok
-            </span>
-            <select
-              name="stockStatus"
-              defaultValue={stockStatus}
-              className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-            >
-              <option value="">Semua status</option>
-              <option value="ready">Aman</option>
-              <option value="low">Stok tipis</option>
-              <option value="backorder">Backorder</option>
-            </select>
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-              Urutkan
-            </span>
-            <select
-              name="sort"
-              defaultValue={sort}
-              className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-            >
-              <option value="latest">Produk terbaru</option>
-              <option value="popular">Terlaris</option>
-              <option value="promo">Promo terbesar</option>
-              <option value="price-asc">Harga termurah</option>
-              <option value="price-desc">Harga tertinggi</option>
-              <option value="name-asc">Nama A-Z</option>
-              <option value="name-desc">Nama Z-A</option>
-            </select>
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-              Update dari tanggal
-            </span>
-            <input
-              name="dateFrom"
-              type="date"
-              defaultValue={dateFrom ?? ""}
-              className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-              Update sampai tanggal
-            </span>
-            <input
-              name="dateTo"
-              type="date"
-              defaultValue={dateTo ?? ""}
-              className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-              Tampilkan
-            </span>
-            <select
-              name="pageSize"
-              defaultValue={String(pageSize)}
-              className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-            >
-              {adminPageSizeOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option} data
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="flex flex-wrap items-end gap-2 xl:col-span-4">
+      <section className="surface-panel rounded-[2rem] p-4">
+        <form method="get" className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder="Cari nama, kode barang, merek, kategori, atau kode motor"
+            className="xl:col-span-2 w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
+          />
+          <select
+            name="brand"
+            defaultValue={brand}
+            className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
+          >
+            <option value="">Semua merek</option>
+            {brandOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <select
+            name="category"
+            defaultValue={category}
+            className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
+          >
+            <option value="">Semua kategori</option>
+            {categoryOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <select
+            name="vehicle"
+            defaultValue={vehicle}
+            className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
+          >
+            <option value="">Semua kendaraan</option>
+            {vehicleOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <select
+            name="stockStatus"
+            defaultValue={stockStatus}
+            className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
+          >
+            <option value="">Semua stok</option>
+            <option value="ready">Aman</option>
+            <option value="low">Stok tipis</option>
+            <option value="backorder">Backorder</option>
+          </select>
+          <select
+            name="sort"
+            defaultValue={sort}
+            className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
+          >
+            <option value="latest">Terbaru</option>
+            <option value="popular">Terlaris</option>
+            <option value="price-asc">Harga termurah</option>
+            <option value="price-desc">Harga tertinggi</option>
+            <option value="name-asc">Nama A-Z</option>
+            <option value="name-desc">Nama Z-A</option>
+          </select>
+          <select
+            name="pageSize"
+            defaultValue={String(pageSize)}
+            className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
+          >
+            {adminPageSizeOptions.map((option) => (
+              <option key={option} value={option}>
+                {option} data
+              </option>
+            ))}
+          </select>
+          <div className="xl:col-span-5 flex gap-2">
             <button
               type="submit"
               className="rounded-full border border-brand-deep bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-deep hover:text-white focus-visible:text-white"
             >
-              Terapkan Filter
+              Terapkan
             </button>
             <Link
               href="/admin/produk"
@@ -908,8 +808,8 @@ export default async function AdminProductsPage({
 
       {pagination.items.length === 0 ? (
         <AdminTableEmptyState
-          title="Produk tidak ditemukan"
-          description="Coba longgarkan filter brand, kategori, kode motor, tanggal update, atau status stok untuk melihat lebih banyak data."
+          title="Barang tidak ditemukan"
+          description="Coba longgarkan filter pencarian atau stok."
         />
       ) : (
         <>
@@ -918,24 +818,20 @@ export default async function AdminProductsPage({
               <thead className="bg-white/70 text-left text-xs font-semibold uppercase tracking-[0.18em] text-muted">
                 <tr>
                   <th className="px-4 py-3">Produk</th>
-                  <th className="px-4 py-3">Brand</th>
-                  <th className="px-4 py-3">Kategori</th>
-                  <th className="px-4 py-3">Kode Motor</th>
+                  <th className="px-4 py-3">Merek</th>
                   <th className="px-4 py-3">Harga</th>
                   <th className="px-4 py-3">Stok</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Update</th>
+                  <th className="px-4 py-3">Kode Motor</th>
+                  <th className="px-4 py-3">Diperbarui</th>
                   <th className="px-4 py-3">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {pagination.items.map((product) => {
-                  const editHref = buildAdminPageHref(
+                  const rowEditHref = buildAdminPageHref(
                     "/admin/produk",
-                    navigationSearchParams,
-                    {
-                      edit: product.id,
-                    },
+                    navParams,
+                    { edit: product.id },
                   );
 
                   return (
@@ -943,67 +839,45 @@ export default async function AdminProductsPage({
                       key={product.id}
                       className={cn(
                         "border-t border-line align-top",
-                        editProduct?.id === product.id
-                          ? "bg-brand-soft/20"
-                          : "",
+                        editProduct?.id === product.id ? "bg-brand-soft/20" : "",
                       )}
                     >
                       <td className="px-4 py-3">
-                        <div className="flex min-w-[280px] items-start gap-3">
-                          <div className="w-20 shrink-0">
-                            <ProductPreview
-                              product={product}
-                              compact
-                              className="h-16"
-                            />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-ink">
-                              {product.name}
-                            </p>
+                        <div className="flex min-w-[260px] items-start gap-3">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={getProductImageSrc(product)}
+                            alt={product.name}
+                            width={72}
+                            height={72}
+                            loading="lazy"
+                            className="h-[72px] w-[72px] rounded-2xl border border-line bg-white object-cover"
+                            onError={(event) => {
+                              event.currentTarget.src = DEFAULT_PRODUCT_IMAGE;
+                            }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-ink">{product.name}</p>
                             <p className="mt-1 text-xs text-ink-soft">
-                              {product.shortDescription}
+                              {product.sku} - {product.category}
                             </p>
-                            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
-                              {product.sku}
+                            <p className="mt-1 truncate text-xs text-ink-soft">
+                              {product.image || "Belum ada gambar"}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-ink-soft">
-                        {product.brand}
-                      </td>
-                      <td className="px-4 py-3 text-ink-soft">
-                        {product.category}
-                      </td>
-                      <td className="px-4 py-3 text-ink-soft">
-                        <div className="min-w-[180px] leading-6">
-                          {product.motorCodes.length > 0
-                            ? product.motorCodes.join(", ")
-                            : "-"}
-                        </div>
-                      </td>
+                      <td className="px-4 py-3 text-ink-soft">{product.brand}</td>
                       <td className="px-4 py-3">
-                        <div className="min-w-[132px]">
-                          <p className="font-semibold text-ink">
-                            {formatRupiah(product.price)}
-                          </p>
-                          {product.compareAtPrice ? (
-                            <p className="text-xs text-muted line-through">
-                              {formatRupiah(product.compareAtPrice)}
-                            </p>
-                          ) : null}
-                        </div>
+                        <p className="font-semibold text-ink">
+                          {formatRupiah(product.price)}
+                        </p>
                       </td>
                       <td className="px-4 py-3 font-semibold text-ink">
                         {product.stock}
                       </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold ${getStockBadgeClass(product.stock)}`}
-                        >
-                          {getStockLabel(product.stock)}
-                        </span>
+                      <td className="px-4 py-3 text-ink-soft">
+                        {product.motorCodes.join(", ") || "-"}
                       </td>
                       <td className="px-4 py-3 text-ink-soft">
                         {formatDate(product.updatedAt)}
@@ -1011,32 +885,16 @@ export default async function AdminProductsPage({
                       <td className="px-4 py-3">
                         <div className="flex min-w-[104px] flex-wrap gap-2">
                           <AdminIconLink
-                            href={editHref}
+                            href={rowEditHref}
                             label={`Edit ${product.name}`}
                             icon={<EditIcon />}
                           />
-                          <form
-                            action="/api/admin-products/delete"
-                            method="post"
-                          >
-                            <input type="hidden" name="id" value={product.id} />
-                            <input
-                              type="hidden"
-                              name="imagePath"
-                              value={product.image ?? ""}
-                            />
-                            <input
-                              type="hidden"
-                              name="redirectTo"
-                              value={listHref}
-                            />
-                            <AdminIconButton
-                              type="submit"
-                              label={`Hapus ${product.name}`}
-                              icon={<TrashIcon />}
-                              tone="danger"
-                            />
-                          </form>
+                          <AdminIconButton
+                            label={`Hapus ${product.name}`}
+                            icon={<TrashIcon />}
+                            tone="danger"
+                            onClick={() => handleDelete(product)}
+                          />
                         </div>
                       </td>
                     </tr>
@@ -1048,7 +906,7 @@ export default async function AdminProductsPage({
 
           <AdminTablePagination
             pathname="/admin/produk"
-            searchParams={listSearchParams}
+            searchParams={listParams}
             page={pagination.page}
             totalPages={pagination.totalPages}
             totalItems={pagination.totalItems}
@@ -1058,5 +916,13 @@ export default async function AdminProductsPage({
         </>
       )}
     </div>
+  );
+}
+
+export default function AdminProductsPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminProductsPageContent />
+    </Suspense>
   );
 }

@@ -1,12 +1,11 @@
-import "server-only";
-import { cache } from "react";
 import type { AppParameter } from "@/entities/app-parameter/model/types";
 import { backendFetchJson } from "@/shared/api/backend-client";
 import {
   defaultPublicAppConfig,
   type PublicAppConfig,
 } from "@/shared/config/app";
-import { getBackendRuntimeConfig } from "@/shared/config/env";
+import { withBasePath } from "@/shared/config/base-path";
+import { getPublicBackendBaseUrl } from "@/shared/config/public-env";
 
 function normalizeParameterKey(value: string) {
   return value
@@ -65,6 +64,24 @@ function appendAssetVersion(value: string, updatedAt: string) {
   }
 }
 
+function resolveBackendAssetPath(value: string) {
+  if (!value.startsWith("/api/") && !value.startsWith("/uploads/")) {
+    return value;
+  }
+
+  const backendBaseUrl = getPublicBackendBaseUrl();
+
+  if (!backendBaseUrl) {
+    return value;
+  }
+
+  try {
+    return new URL(value, `${new URL(backendBaseUrl).origin}/`).toString();
+  } catch {
+    return value;
+  }
+}
+
 function readAssetParameter(
   parameterMap: Map<string, AppParameter>,
   key: string,
@@ -80,7 +97,9 @@ function readAssetParameter(
     return fallback;
   }
 
-  return appendAssetVersion(value, parameter.updatedAt);
+  return withBasePath(
+    appendAssetVersion(resolveBackendAssetPath(value), parameter.updatedAt),
+  );
 }
 
 function readKeywords(parameterMap: Map<string, AppParameter>) {
@@ -193,10 +212,8 @@ function buildPublicAppConfig(parameters: AppParameter[]): PublicAppConfig {
   };
 }
 
-export const getPublicAppConfig = cache(async () => {
-  const config = getBackendRuntimeConfig();
-
-  if (!config.enabled) {
+export async function getPublicAppConfig() {
+  if (!getPublicBackendBaseUrl()) {
     return defaultPublicAppConfig;
   }
 
@@ -208,4 +225,4 @@ export const getPublicAppConfig = cache(async () => {
   } catch {
     return defaultPublicAppConfig;
   }
-});
+}

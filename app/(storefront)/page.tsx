@@ -1,20 +1,57 @@
+"use client";
+
 import Link from "next/link";
-import { getCatalog, getFeaturedProducts, getPromoProducts } from "@/entities/product/api/product-service";
-import { getPublicAppConfig } from "@/shared/api/public-app-config-service";
+import { useEffect, useState } from "react";
+import { getCatalog } from "@/entities/product/api/product-service";
+import {
+  buildCatalogPayload,
+  defaultCatalogQuery,
+} from "@/entities/product/model/catalog";
+import type { CatalogPayload, Product } from "@/entities/product/model/types";
 import { ProductCard } from "@/entities/product/ui/product-card";
+import { getPublicBackendBaseUrl } from "@/shared/config/public-env";
+import { useBranding } from "@/shared/runtime/app-runtime-provider";
 import { Container } from "@/shared/ui/container";
 import { SectionHeading } from "@/shared/ui/section-heading";
 import { StorefrontSearch } from "@/widgets/storefront/storefront-search";
 
-export default async function HomePage() {
-  const [catalog, featuredProducts, promoProducts, branding] = await Promise.all([
-    getCatalog({ sort: "popular" }),
-    getFeaturedProducts(6),
-    getPromoProducts(4),
-    getPublicAppConfig(),
-  ]);
+const initialCatalog = buildCatalogPayload(
+  [],
+  defaultCatalogQuery,
+  "backend",
+  !!getPublicBackendBaseUrl(),
+);
+
+export default function HomePage() {
+  const { branding } = useBranding();
+  const [catalog, setCatalog] = useState<CatalogPayload>(initialCatalog);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [latestProducts, setLatestProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void (async () => {
+      const [popularCatalog, latestCatalog] = await Promise.all([
+        getCatalog({ sort: "popular" }),
+        getCatalog({ sort: "latest" }),
+      ]);
+
+      if (!isMounted) {
+        return;
+      }
+
+      setCatalog(popularCatalog);
+      setFeaturedProducts(popularCatalog.items.slice(0, 6));
+      setLatestProducts(latestCatalog.items.slice(0, 4));
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const readyStockCount = catalog.items.filter((product) => product.stock > 0).length;
-  const promoCount = catalog.items.filter((product) => product.compareAtPrice).length;
   const categoryCount = catalog.options.categories.length;
 
   return (
@@ -22,18 +59,18 @@ export default async function HomePage() {
       <section className="pt-6 sm:pt-8">
         <Container>
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-            <div className="surface-panel noise-overlay rounded-[1.8rem] p-4 sm:p-6">
+            <div className="min-w-0 surface-panel noise-overlay rounded-[1.8rem] p-4 sm:p-6">
               <span className="inline-flex rounded-full bg-brand-soft px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-deep sm:text-xs">
-                E-commerce {branding.brandCategoryLabel}
+                Toko {branding.brandCategoryLabel}
               </span>
               <h1 className="mt-4 max-w-3xl font-display text-xl font-semibold leading-tight text-ink sm:text-2xl lg:text-3xl">
-                {branding.appName} membantu customer menemukan sparepart motor dengan tampilan
-                yang rapi, harga jelas, dan katalog yang nyaman dijelajahi.
+                {branding.appName} memudahkan kamu mencari sparepart motor dengan
+                tampilan yang rapi, harga yang jelas, dan katalog yang enak dijelajahi.
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-soft sm:text-base">
-                Mulai dari kampas rem, oli, busi, CVT, sampai part fast moving lain,
-                semua ditata agar pencarian produk terasa cepat baik di desktop maupun
-                mobile.
+                Mulai dari kampas rem, oli, busi, CVT, sampai barang yang sering dicari,
+                semuanya ditata supaya pencarian terasa cepat, baik di desktop maupun
+                handphone.
               </p>
               <div className="mt-5 space-y-3">
                 <StorefrontSearch
@@ -58,9 +95,9 @@ export default async function HomePage() {
                   </p>
                 </div>
                 <div className="rounded-[1.2rem] border border-line bg-white/70 p-3">
-                  <p className="text-xs text-muted">Promo berjalan</p>
+                  <p className="text-xs text-muted">Produk siap jual</p>
                   <p className="mt-1.5 font-display text-lg font-semibold text-ink">
-                    {promoCount}
+                    {readyStockCount}
                   </p>
                 </div>
                 <div className="rounded-[1.2rem] border border-line bg-white/70 p-3">
@@ -72,22 +109,22 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="grid gap-3">
+            <div className="min-w-0 grid gap-3">
               {[
                 {
-                  title: "Belanja lebih cepat",
+                  title: "Belanja lebih praktis",
                   description:
-                    "Cari produk, cek harga, dan bandingkan opsi dengan layout yang tetap nyaman dibaca.",
+                    "Cari barang, cek harga, dan bandingkan pilihan dengan tampilan yang tetap nyaman dibaca.",
                 },
                 {
-                  title: "Stok siap dipantau",
+                  title: "Stok mudah dilihat",
                   description:
-                    `${readyStockCount} produk siap dibeli dengan informasi stok dan rating yang langsung terlihat.`,
+                    `${readyStockCount} barang siap dibeli dengan informasi stok dan rating yang langsung terlihat.`,
                 },
                 {
-                  title: "Admin terpisah rapi",
+                  title: "Pengelolaan toko terpisah",
                   description:
-                    "Akses pengelolaan toko dibuka lewat login admin tersendiri agar area customer tetap bersih.",
+                    "Bagian pengelolaan dibuat terpisah supaya area belanja tetap bersih dan nyaman dilihat.",
                 },
               ].map((item) => (
                 <div key={item.title} className="surface-panel rounded-[1.5rem] p-4">
@@ -111,8 +148,8 @@ export default async function HomePage() {
         <Container>
           <SectionHeading
             eyebrow="Produk unggulan"
-            title="Katalog sparepart yang langsung terasa seperti aplikasi jualan sungguhan"
-            description="Grid produk dibuat padat, rapi, dan tetap informatif supaya customer bisa fokus memilih barang dengan cepat."
+            title="Katalog sparepart yang rapi dan nyaman dipilih"
+            description="Tampilan produk dibuat padat, jelas, dan tetap enak dibaca supaya barang yang dicari lebih cepat ketemu."
           />
           <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
             {featuredProducts.map((product) => (
@@ -125,12 +162,12 @@ export default async function HomePage() {
       <section className="mt-10">
         <Container>
           <SectionHeading
-            eyebrow="Promo cepat"
-            title="Slot promo yang bisa diisi campaign, flash sale, atau clearance stock"
-            description="Bagian promo disiapkan untuk menonjolkan barang diskon, paket bundling, atau stok yang perlu dipercepat penjualannya."
+            eyebrow="Produk terbaru"
+            title="Pilihan barang terbaru yang baru masuk katalog"
+            description="Bagian ini menampilkan barang yang baru ditambahkan atau diperbarui supaya stok baru lebih cepat terlihat."
           />
           <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            {promoProducts.map((product) => (
+            {latestProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
@@ -142,14 +179,14 @@ export default async function HomePage() {
           <div className="surface-panel rounded-[1.8rem] p-4 sm:p-6">
             <SectionHeading
               eyebrow="Pengalaman belanja"
-              title="Tata letak dibuat supaya customer mudah mencari, membandingkan, dan membeli"
+              title="Tata letaknya dibuat supaya barang mudah dicari, dibandingkan, lalu dipilih"
               description="Setiap bagian diarahkan agar informasi penting tampil cepat tanpa membuat layar terasa ramai, terutama saat dibuka lewat mobile."
             />
             <div className="mt-5 grid gap-3 lg:grid-cols-3">
               {[
-                "Filter, search, dan sorting membantu customer menemukan part yang relevan tanpa banyak langkah.",
-                "Detail produk menonjolkan harga, stok, rating, dan spesifikasi inti agar keputusan beli terasa lebih yakin.",
-                "Area admin tetap terpisah supaya pengelolaan katalog dan pesanan tidak mengganggu tampilan storefront.",
+                "Filter, pencarian, dan urutan produk membantu kamu menemukan sparepart yang cocok tanpa banyak langkah.",
+                "Detail produk menonjolkan harga, stok, rating, dan spesifikasi penting supaya lebih mantap saat memilih.",
+                "Bagian pengelolaan toko dipisah agar tampilan belanja tetap bersih dan nyaman.",
               ].map((point) => (
                 <div key={point} className="rounded-[1.25rem] border border-line bg-white/65 p-4">
                   <p className="text-sm leading-6 text-ink-soft">{point}</p>

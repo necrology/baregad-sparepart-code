@@ -1,20 +1,15 @@
-import "server-only";
 import type { DashboardUser } from "@/entities/user/model/types";
 import { backendFetchJson } from "@/shared/api/backend-client";
-import { getAdminAuthorizationHeaders } from "@/shared/auth/admin-auth";
-import { getBackendRuntimeConfig } from "@/shared/config/env";
+import { getPublicBackendBaseUrl } from "@/shared/config/public-env";
 
-export async function getAdminUsers() {
-  const config = getBackendRuntimeConfig();
-  const headers = await getAdminAuthorizationHeaders();
-
-  if (!config.enabled || !headers) {
+export async function getAdminUsers(token: string | null | undefined) {
+  if (!getPublicBackendBaseUrl() || !token?.trim()) {
     return [] as DashboardUser[];
   }
 
   try {
     return await backendFetchJson<DashboardUser[]>("/admin/users", {
-      headers,
+      token,
     });
   } catch {
     return [] as DashboardUser[];

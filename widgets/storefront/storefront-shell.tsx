@@ -1,4 +1,7 @@
-import { getPublicAppConfig } from "@/shared/api/public-app-config-service";
+"use client";
+
+import { usePathname } from "next/navigation";
+import { useBranding } from "@/shared/runtime/app-runtime-provider";
 import { Container } from "@/shared/ui/container";
 import { Logo } from "@/shared/ui/logo";
 import { StorefrontHeader } from "@/widgets/storefront/storefront-header";
@@ -7,12 +10,13 @@ type StorefrontShellProps = {
   children: React.ReactNode;
 };
 
-export async function StorefrontShell({ children }: StorefrontShellProps) {
-  const branding = await getPublicAppConfig();
+export function StorefrontShell({ children }: StorefrontShellProps) {
+  const { branding } = useBranding();
+  const pathname = usePathname();
 
   return (
-    <div className="min-h-screen">
-      <StorefrontHeader branding={branding} />
+    <div key={pathname} className="min-h-screen overflow-x-hidden">
+      <StorefrontHeader key={pathname} branding={branding} />
 
       <main>{children}</main>
 
@@ -21,24 +25,24 @@ export async function StorefrontShell({ children }: StorefrontShellProps) {
           <div className="space-y-4">
             <Logo compact branding={branding} />
             <p className="max-w-2xl text-sm leading-7 text-ink-soft sm:text-base">
-              {branding.appTagline} Jelajahi katalog, bandingkan harga, dan temukan sparepart
-              yang paling sesuai untuk kebutuhan motor customer.
+              {branding.appTagline} Jelajahi katalog, bandingkan pilihan, dan temukan
+              sparepart yang cocok untuk motor harianmu.
             </p>
           </div>
           <div>
-            <h3 className="font-display text-lg font-semibold text-ink">Customer</h3>
+            <h3 className="font-display text-lg font-semibold text-ink">Belanja</h3>
             <div className="mt-4 space-y-3 text-sm text-ink-soft">
-              <p>Beranda promosi sparepart</p>
-              <p>Katalog dengan filter dan pencarian</p>
-              <p>Detail produk, harga, stok, dan kompatibilitas</p>
+              <p>Jelajahi katalog sparepart</p>
+              <p>Cari barang dengan filter yang mudah dipakai</p>
+              <p>Lihat detail, stok, dan kecocokan produk</p>
             </div>
           </div>
           <div>
-            <h3 className="font-display text-lg font-semibold text-ink">Admin</h3>
+            <h3 className="font-display text-lg font-semibold text-ink">Pengelolaan</h3>
             <div className="mt-4 space-y-3 text-sm text-ink-soft">
-              <p>Dashboard performa operasional</p>
-              <p>Manajemen produk dan stok</p>
-              <p>Monitoring pesanan dan kesiapan restock</p>
+              <p>Atur barang dan stok toko</p>
+              <p>Pantau pesanan yang masuk</p>
+              <p>Siapkan restock sebelum stok habis</p>
             </div>
           </div>
         </Container>

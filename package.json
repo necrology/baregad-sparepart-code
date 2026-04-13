@@ -3,9 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node ./scripts/dev-local.mjs",
+    "dev:root": "next dev",
+    "build": "node ./scripts/build-static.mjs",
+    "build:next": "next build",
     "build:static": "node ./scripts/build-static.mjs",
+    "build:static:local": "node ./scripts/build-static.mjs --local",
     "start": "next start",
     "lint": "eslint"
   },

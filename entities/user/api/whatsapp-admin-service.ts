@@ -1,7 +1,6 @@
-import "server-only";
 import type { StorefrontWhatsAppAdmin } from "@/entities/user/model/types";
 import { backendFetchJson } from "@/shared/api/backend-client";
-import { getBackendRuntimeConfig } from "@/shared/config/env";
+import { getPublicBackendBaseUrl } from "@/shared/config/public-env";
 import { buildWhatsAppUrl } from "@/shared/lib/whatsapp";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -37,9 +36,7 @@ function normalizeWhatsAppAdmin(value: unknown): StorefrontWhatsAppAdmin | null 
 }
 
 export async function getStorefrontWhatsAppAdmins() {
-  const config = getBackendRuntimeConfig();
-
-  if (!config.enabled) {
+  if (!getPublicBackendBaseUrl()) {
     return [] as StorefrontWhatsAppAdmin[];
   }
 

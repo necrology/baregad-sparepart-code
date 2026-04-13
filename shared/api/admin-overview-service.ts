@@ -1,9 +1,7 @@
-import "server-only";
 import type { Order } from "@/entities/order/model/types";
 import type { Product } from "@/entities/product/model/types";
 import { backendFetchJson } from "@/shared/api/backend-client";
-import { getAdminAuthorizationHeaders } from "@/shared/auth/admin-auth";
-import { getBackendRuntimeConfig } from "@/shared/config/env";
+import { getPublicBackendBaseUrl } from "@/shared/config/public-env";
 
 export type AdminOverview = {
   metrics: Array<{
@@ -28,25 +26,25 @@ function buildEmptyOverview(backendAvailable: boolean): AdminOverview {
       {
         label: "Produk Aktif",
         value: "0",
-        note: "Menunggu data produk dari backend",
+        note: "Belum ada data barang yang tampil",
         tone: "brand",
       },
       {
-        label: "Order Hari Ini",
+        label: "Pesanan Hari Ini",
         value: "0",
-        note: "Belum ada pesanan yang terbaca",
+        note: "Belum ada pesanan masuk hari ini",
         tone: "accent",
       },
       {
-        label: "Perlu Restock",
+        label: "Stok Tipis",
         value: "0",
-        note: "Belum ada produk stok tipis",
+        note: "Belum ada stok yang perlu diperhatikan",
         tone: "warning",
       },
       {
-        label: "Gross Revenue",
+        label: "Omzet",
         value: "Rp 0",
-        note: "Ringkasan omzet akan tampil setelah backend aktif",
+        note: "Ringkasan omzet akan muncul saat pesanan mulai tercatat",
         tone: "ink",
       },
     ],
@@ -58,17 +56,16 @@ function buildEmptyOverview(backendAvailable: boolean): AdminOverview {
   };
 }
 
-export async function getAdminOverview() {
-  const config = getBackendRuntimeConfig();
-  const headers = await getAdminAuthorizationHeaders();
+export async function getAdminOverview(token: string | null | undefined) {
+  const backendEnabled = !!getPublicBackendBaseUrl();
 
-  if (!config.enabled || !headers) {
-    return buildEmptyOverview(config.enabled);
+  if (!backendEnabled || !token?.trim()) {
+    return buildEmptyOverview(backendEnabled);
   }
 
   try {
     const response = await backendFetchJson<AdminOverview>("/admin/overview", {
-      headers,
+      token,
     });
 
     return {
@@ -77,6 +74,6 @@ export async function getAdminOverview() {
       backendAvailable: true,
     };
   } catch {
-    return buildEmptyOverview(config.enabled);
+    return buildEmptyOverview(backendEnabled);
   }
 }

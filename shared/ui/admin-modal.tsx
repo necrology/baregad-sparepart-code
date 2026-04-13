@@ -2,6 +2,7 @@
 
 import { useId, useRef, type MouseEvent, type ReactNode } from "react";
 import { cn } from "@/shared/lib/cn";
+import { CloseIcon } from "@/shared/ui/app-icons";
 
 type AdminModalProps = {
   title: string;
@@ -90,9 +91,11 @@ export function AdminModal({
               <button
                 type="button"
                 onClick={closeModal}
-                className="rounded-full border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:bg-white/70"
+                aria-label="Tutup modal"
+                title="Tutup modal"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
               >
-                Tutup
+                <CloseIcon />
               </button>
             </div>
 

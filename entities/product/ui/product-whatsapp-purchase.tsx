@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useId, useRef, type MouseEvent } from "react";
-import { WhatsAppIcon } from "@/shared/ui/app-icons";
+import { CloseIcon, WhatsAppIcon } from "@/shared/ui/app-icons";
 
 type ProductWhatsAppOption = {
   id: string;
@@ -81,9 +81,11 @@ export function ProductWhatsAppPurchase({
               <button
                 type="button"
                 onClick={closeModal}
-                className="rounded-full border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:bg-white/70"
+                aria-label="Tutup modal"
+                title="Tutup modal"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
               >
-                Tutup
+                <CloseIcon />
               </button>
             </div>
 

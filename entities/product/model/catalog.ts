@@ -18,7 +18,6 @@ const catalogSortValues: CatalogSort[] = [
   "latest",
   "price-asc",
   "price-desc",
-  "promo",
 ];
 
 export const defaultCatalogQuery: CatalogQuery = {
@@ -159,11 +158,6 @@ export function sortCatalogProducts(products: Product[], sort: CatalogSort) {
         return left.price - right.price;
       case "price-desc":
         return right.price - left.price;
-      case "promo": {
-        const leftDiscount = (left.compareAtPrice ?? left.price) - left.price;
-        const rightDiscount = (right.compareAtPrice ?? right.price) - right.price;
-        return rightDiscount - leftDiscount || right.soldCount - left.soldCount;
-      }
       case "popular":
       default:
         return right.soldCount - left.soldCount || right.rating - left.rating;

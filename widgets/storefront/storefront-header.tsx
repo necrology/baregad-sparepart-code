@@ -32,11 +32,12 @@ export function StorefrontHeader({
               const targetPath = item.href.split("?")[0];
               const isActive =
                 targetPath === "/" ? pathname === "/" : pathname.startsWith(targetPath);
+              const itemHref = item.href;
 
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={itemHref}
                   className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                     isActive
                       ? "bg-brand text-white hover:text-white focus-visible:text-white"
@@ -54,7 +55,7 @@ export function StorefrontHeader({
             aria-expanded={isOpen}
             aria-label="Buka menu"
             onClick={() => setIsOpen((value) => !value)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-white/80 text-ink lg:hidden"
+            className="relative z-10 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-white/80 text-ink lg:hidden"
           >
             <span className="flex flex-col gap-1.5">
               <span
@@ -85,12 +86,6 @@ export function StorefrontHeader({
           ) : null}
         </div>
 
-        <div className="pb-3">
-          <StorefrontSearch
-            placeholder="Cari nama barang, brand, SKU, atau kode motor"
-          />
-        </div>
-
         {isOpen ? (
           <div className="pb-3 lg:hidden">
             <div className="surface-panel rounded-[1.25rem] p-2.5">
@@ -99,11 +94,12 @@ export function StorefrontHeader({
                   const targetPath = item.href.split("?")[0];
                   const isActive =
                     targetPath === "/" ? pathname === "/" : pathname.startsWith(targetPath);
+                  const itemHref = item.href;
 
                   return (
                     <Link
                       key={item.href}
-                      href={item.href}
+                      href={itemHref}
                       onClick={() => setIsOpen(false)}
                       className={`rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
                         isActive
@@ -128,6 +124,12 @@ export function StorefrontHeader({
             </div>
           </div>
         ) : null}
+
+        <div className="pb-3">
+          <StorefrontSearch
+            placeholder="Cari nama barang, brand, SKU, atau kode motor"
+          />
+        </div>
       </Container>
     </header>
   );

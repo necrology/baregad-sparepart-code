@@ -1,20 +1,15 @@
-import "server-only";
 import type { Order } from "@/entities/order/model/types";
 import { backendFetchJson } from "@/shared/api/backend-client";
-import { getAdminAuthorizationHeaders } from "@/shared/auth/admin-auth";
-import { getBackendRuntimeConfig } from "@/shared/config/env";
+import { getPublicBackendBaseUrl } from "@/shared/config/public-env";
 
-export async function getAdminOrders() {
-  const config = getBackendRuntimeConfig();
-  const headers = await getAdminAuthorizationHeaders();
-
-  if (!config.enabled || !headers) {
+export async function getAdminOrders(token: string | null | undefined) {
+  if (!getPublicBackendBaseUrl() || !token?.trim()) {
     return [] as Order[];
   }
 
   try {
     return await backendFetchJson<Order[]>("/admin/orders", {
-      headers,
+      token,
     });
   } catch {
     return [] as Order[];

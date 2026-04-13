@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { withAppPath } from "@/shared/config/base-path";
 import { cn } from "@/shared/lib/cn";
 import { SearchIcon } from "@/shared/ui/app-icons";
 
@@ -23,7 +24,7 @@ export function StorefrontSearch({
   return (
     <div className={cn("space-y-2", className)}>
       <form
-        action="/katalog"
+        action={withAppPath("/katalog")}
         role="search"
         className={cn(
           "flex items-center gap-2 border border-line bg-white/80 backdrop-blur-sm",

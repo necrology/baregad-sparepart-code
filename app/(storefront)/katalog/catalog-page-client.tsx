@@ -1,43 +1,65 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { getCatalog } from "@/entities/product/api/product-service";
 import {
   buildCatalogPayload,
+  defaultCatalogQuery,
   parseCatalogQuery,
 } from "@/entities/product/model/catalog";
-import type { CatalogOptionSet, Product } from "@/entities/product/model/types";
+import type { CatalogPayload } from "@/entities/product/model/types";
 import { ProductCard } from "@/entities/product/ui/product-card";
 import { CatalogFilters } from "@/features/catalog/ui/catalog-filters";
+import { getPublicBackendBaseUrl } from "@/shared/config/public-env";
 import { Container } from "@/shared/ui/container";
 import { SectionHeading } from "@/shared/ui/section-heading";
 
-type CatalogPageClientProps = {
-  products: Product[];
-  options: CatalogOptionSet;
-  backendAvailable: boolean;
-};
-
 function buildActiveFilters(query: ReturnType<typeof parseCatalogQuery>) {
   return [
-    query.q ? `Keyword: ${query.q}` : null,
+    query.q ? `Kata kunci: ${query.q}` : null,
     query.category ? `Kategori: ${query.category}` : null,
-    query.brand ? `Brand: ${query.brand}` : null,
+    query.brand ? `Merek: ${query.brand}` : null,
     query.vehicle ? `Motor: ${query.vehicle}` : null,
     query.motorCode ? `Kode motor: ${query.motorCode}` : null,
     query.availability ? "Stok siap" : null,
-    query.sort !== "popular" ? `Sort: ${query.sort}` : null,
+    query.sort !== "popular" ? `Urutan: ${query.sort}` : null,
   ].filter(Boolean) as string[];
 }
 
-export function CatalogPageClient({
-  products,
-  options,
-  backendAvailable,
-}: CatalogPageClientProps) {
+const initialCatalog = buildCatalogPayload(
+  [],
+  defaultCatalogQuery,
+  "backend",
+  !!getPublicBackendBaseUrl(),
+);
+
+export function CatalogPageClient() {
   const searchParams = useSearchParams();
-  const query = parseCatalogQuery(new URLSearchParams(searchParams.toString()));
-  const catalog = buildCatalogPayload(products, query, "backend", backendAvailable);
+  const [catalog, setCatalog] = useState<CatalogPayload>(initialCatalog);
+  const searchParamsString = searchParams.toString();
+  const query = parseCatalogQuery(new URLSearchParams(searchParamsString));
   const activeFilters = buildActiveFilters(query);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void (async () => {
+      const nextCatalog = await getCatalog(
+        parseCatalogQuery(new URLSearchParams(searchParamsString)),
+      );
+
+      if (!isMounted) {
+        return;
+      }
+
+      setCatalog(nextCatalog);
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [searchParamsString]);
 
   return (
     <Container className="py-6">
@@ -45,8 +67,8 @@ export function CatalogPageClient({
         <div className="surface-panel rounded-[1.8rem] p-4 sm:p-6">
           <SectionHeading
             eyebrow="Katalog"
-            title="List produk, filter, dan search sudah disiapkan untuk pola e-commerce sparepart"
-            description="Pilih kategori, brand, tipe motor, kode motor, atau harga agar customer bisa langsung mengerucut ke sparepart yang paling cocok."
+            title="Cari sparepart yang pas tanpa ribet"
+            description="Pilih kategori, merek, tipe motor, kode motor, atau harga supaya barang yang dicari lebih cepat ketemu."
           />
           <div className="mt-5 flex flex-wrap gap-2">
             <span className="rounded-full bg-brand-soft px-3 py-1.5 text-xs font-semibold text-brand-deep">
@@ -76,7 +98,7 @@ export function CatalogPageClient({
           <aside>
             <CatalogFilters
               key={JSON.stringify(catalog.applied)}
-              options={options}
+              options={catalog.options}
               applied={catalog.applied}
               total={catalog.total}
             />

@@ -1,3 +1,5 @@
+import { withBasePath } from "@/shared/config/base-path";
+
 export function buildSafeAdminRedirectUrl(
   request: Request,
   pathname: string,
@@ -5,17 +7,22 @@ export function buildSafeAdminRedirectUrl(
   patch: Record<string, string | undefined>,
 ) {
   const requestUrl = new URL(request.url);
-  let targetUrl = new URL(pathname, requestUrl);
+  const resolvedPathname = withBasePath(pathname);
+  let targetUrl = new URL(resolvedPathname, requestUrl);
 
   if (typeof redirectTo === "string" && redirectTo.trim()) {
     try {
       const candidateUrl = new URL(redirectTo, requestUrl);
 
-      if (candidateUrl.origin === requestUrl.origin && candidateUrl.pathname === pathname) {
-        targetUrl = candidateUrl;
+      if (
+        candidateUrl.origin === requestUrl.origin &&
+        (candidateUrl.pathname === pathname ||
+          candidateUrl.pathname === resolvedPathname)
+      ) {
+        targetUrl.search = candidateUrl.search;
       }
     } catch {
-      targetUrl = new URL(pathname, requestUrl);
+      targetUrl = new URL(resolvedPathname, requestUrl);
     }
   }
 

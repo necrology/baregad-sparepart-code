@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buildProductHref } from "@/entities/product/model/product-links";
 import type { Product } from "@/entities/product/model/types";
 import { ProductPreview } from "@/entities/product/ui/product-preview";
 import { formatRupiah } from "@/shared/lib/currency";
@@ -49,11 +50,6 @@ export function ProductCard({ product }: ProductCardProps) {
             <p className="mt-1 text-[13px] font-semibold text-ink sm:text-base">
               {formatRupiah(product.price)}
             </p>
-            {product.compareAtPrice ? (
-              <p className="text-[10px] text-muted line-through sm:text-xs">
-                {formatRupiah(product.compareAtPrice)}
-              </p>
-            ) : null}
           </div>
           <div>
             <p className="text-[10px] uppercase tracking-[0.16em] text-muted sm:text-xs">
@@ -76,7 +72,7 @@ export function ProductCard({ product }: ProductCardProps) {
             />
           </div>
           <Link
-            href={`/produk/${product.slug}`}
+            href={buildProductHref(product.slug)}
             className="inline-flex min-w-16 items-center justify-center rounded-full border border-brand-deep bg-brand px-3 py-1.5 text-[11px] leading-none font-semibold whitespace-nowrap text-white shadow-[0_6px_16px_rgba(45,103,156,0.24)] transition hover:bg-brand-deep hover:text-white hover:shadow-[0_8px_20px_rgba(35,73,111,0.28)] focus-visible:text-white sm:min-w-20 sm:px-4 sm:py-2 sm:text-sm"
           >
             Detail

@@ -2,8 +2,7 @@ export type CatalogSort =
   | "popular"
   | "latest"
   | "price-asc"
-  | "price-desc"
-  | "promo";
+  | "price-desc";
 
 export type ProductSpecification = {
   label: string;
@@ -21,7 +20,6 @@ export type Product = {
   vehicle: string;
   motorCodes: string[];
   price: number;
-  compareAtPrice?: number;
   stock: number;
   rating: number;
   reviewCount: number;

@@ -23,3 +23,8 @@ export function applyToastSearchParams(url: URL, toast?: AppToast | null) {
 
   return url;
 }
+
+export function buildToastHref(pathname: string, toast?: AppToast | null) {
+  const url = new URL(pathname, "http://baregad.local");
+  return `${applyToastSearchParams(url, toast).pathname}${url.search}`;
+}

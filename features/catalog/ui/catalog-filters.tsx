@@ -18,7 +18,6 @@ type CatalogFiltersProps = {
 const sortOptions: Array<{ value: CatalogSort; label: string }> = [
   { value: "popular", label: "Terlaris" },
   { value: "latest", label: "Terbaru" },
-  { value: "promo", label: "Promo" },
   { value: "price-asc", label: "Harga termurah" },
   { value: "price-desc", label: "Harga tertinggi" },
 ];

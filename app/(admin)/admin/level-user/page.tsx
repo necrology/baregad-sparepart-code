@@ -1,7 +1,18 @@
+"use client";
+
 import Link from "next/link";
+import {
+  Suspense,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { UserLevel } from "@/entities/user-level/model/types";
+import { backendFetchJson } from "@/shared/api/backend-client";
 import { getAdminUserLevels } from "@/shared/api/admin-user-level-service";
-import { requireAdminPageAccess } from "@/shared/auth/admin-page-access";
+import { useAdminPageAccess } from "@/shared/auth/admin-page-access";
 import {
   adminPageSizeOptions,
   buildAdminPageHref,
@@ -10,8 +21,9 @@ import {
   paginateItems,
   readNumberSearchParam,
   readSearchParam,
-  type SearchParamsRecord,
+  toSearchParamsRecord,
 } from "@/shared/lib/admin-list";
+import { buildToastHref } from "@/shared/lib/toast";
 import { cn } from "@/shared/lib/cn";
 import { formatDate } from "@/shared/lib/date";
 import {
@@ -19,13 +31,10 @@ import {
   AdminTablePagination,
   AdminTableShell,
 } from "@/shared/ui/admin-table";
+import { AdminBusyOverlay } from "@/shared/ui/admin-busy-overlay";
 import { AdminIconButton, AdminIconLink } from "@/shared/ui/admin-icon-action";
 import { AdminModal } from "@/shared/ui/admin-modal";
-import { EditIcon, TrashIcon } from "@/shared/ui/app-icons";
-
-type AdminUserLevelsPageProps = {
-  searchParams?: Promise<SearchParamsRecord>;
-};
+import { CloseIcon, EditIcon, TrashIcon } from "@/shared/ui/app-icons";
 
 const statusLabelMap = {
   active: "Aktif",
@@ -62,13 +71,13 @@ function sortLevels(levels: UserLevel[], sort: string) {
 
 function createStats(levels: UserLevel[]) {
   return [
-    { label: "Total Level", value: String(levels.length) },
+    { label: "Total Hak Akses", value: String(levels.length) },
     {
-      label: "Level Aktif",
+      label: "Hak Akses Aktif",
       value: String(levels.filter((level) => level.status === "active").length),
     },
     {
-      label: "Level Nonaktif",
+      label: "Hak Akses Nonaktif",
       value: String(
         levels.filter((level) => level.status === "inactive").length,
       ),
@@ -84,13 +93,120 @@ function getStatusBadgeClass(status: UserLevel["status"]) {
   return "border border-line text-ink-soft";
 }
 
-export default async function AdminUserLevelsPage({
-  searchParams,
-}: AdminUserLevelsPageProps) {
-  await requireAdminPageAccess({ allowedRoles: ["admin"] });
+function AdminUserLevelsPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { token, isAllowed, isReady } = useAdminPageAccess({
+    allowedRoles: ["admin"],
+  });
+  const [levels, setLevels] = useState<UserLevel[]>([]);
+  const [busyState, setBusyState] = useState<{
+    title: string;
+    description?: string;
+  } | null>(null);
+  const resolvedSearchParams = toSearchParamsRecord(searchParams.entries());
 
-  const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const levels = await getAdminUserLevels();
+  const loadLevels = useCallback(async () => {
+    if (!token?.trim()) {
+      return;
+    }
+
+    setLevels(await getAdminUserLevels(token));
+  }, [token]);
+
+  useEffect(() => {
+    if (!isAllowed) {
+      return;
+    }
+
+    const loadTimer = window.setTimeout(() => {
+      void loadLevels();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(loadTimer);
+    };
+  }, [isAllowed, loadLevels]);
+
+  async function handleCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const didCreate = await handleMutation(
+      "/admin/user-levels",
+      "POST",
+      {
+        name: String(formData.get("name") ?? ""),
+        code: String(formData.get("code") ?? ""),
+        description: String(formData.get("description") ?? ""),
+        status: String(formData.get("status") ?? "active"),
+      },
+      "Hak akses berhasil ditambahkan.",
+      listHref,
+      {
+        title: "Menyimpan hak akses",
+        description: "Sedang menyimpan hak akses yang baru dibuat.",
+      },
+    );
+
+    if (didCreate) {
+      form.reset();
+      form.closest("dialog")?.close();
+    }
+  }
+
+  async function handleUpdate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const id = String(formData.get("id") ?? "").trim();
+
+    await handleMutation(
+      `/admin/user-levels/${id}`,
+      "PUT",
+      {
+        name: String(formData.get("name") ?? ""),
+        code: String(formData.get("code") ?? ""),
+        description: String(formData.get("description") ?? ""),
+        status: String(formData.get("status") ?? "active"),
+      },
+      "Perubahan hak akses berhasil disimpan.",
+      editReturnHref,
+      {
+        title: "Menyimpan perubahan hak akses",
+        description: "Sedang menyimpan perubahan hak akses.",
+      },
+    );
+  }
+
+  async function handleDelete(id: string, name: string) {
+    const confirmed = window.confirm(`Hapus hak akses "${name}"?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    await handleMutation(
+      `/admin/user-levels/${id}`,
+      "DELETE",
+      undefined,
+      "Hak akses berhasil dihapus.",
+      listHref,
+      {
+        title: "Menghapus hak akses",
+        description: "Sedang menghapus hak akses yang dipilih.",
+      },
+    );
+  }
+
+  if (!isReady || !isAllowed) {
+    return (
+      <div className="surface-panel rounded-[1.8rem] p-6 text-sm text-ink-soft">
+        Sedang menyiapkan daftar hak akses...
+      </div>
+    );
+  }
+
   const page = readNumberSearchParam(resolvedSearchParams, "page", 1);
   const pageSize = readNumberSearchParam(
     resolvedSearchParams,
@@ -106,28 +222,83 @@ export default async function AdminUserLevelsPage({
     readSearchParam(resolvedSearchParams, "sort") ?? levelSortOptions[0];
   const editLevelId = readSearchParam(resolvedSearchParams, "edit") ?? "";
 
-  const navigationSearchParams: SearchParamsRecord = {
-    ...(resolvedSearchParams ?? {}),
+  const navigationSearchParams = {
+    ...resolvedSearchParams,
     toast: undefined,
     toastType: undefined,
     success: undefined,
     error: undefined,
   };
-  const listSearchParams: SearchParamsRecord = {
+  const listSearchParams = {
     ...navigationSearchParams,
     edit: undefined,
   };
-  const listHref = buildAdminPageHref(
-    "/admin/level-user",
-    listSearchParams,
-    {},
-  );
+  const listHref = buildAdminPageHref("/admin/level-user", listSearchParams, {});
   const editLevel = levels.find((level) => level.id === editLevelId) ?? null;
   const editReturnHref = editLevel
     ? buildAdminPageHref("/admin/level-user", navigationSearchParams, {
         edit: editLevel.id,
       })
     : listHref;
+
+  async function handleMutation(
+    pathname: string,
+    method: "POST" | "PUT" | "DELETE",
+    payload: unknown,
+    successMessage: string,
+    errorRedirect = listHref,
+    pendingState?: {
+      title: string;
+      description?: string;
+    },
+  ) {
+    if (!token?.trim()) {
+      router.replace(
+        buildToastHref(errorRedirect, {
+          message: "Sesi login tidak ditemukan.",
+          tone: "error",
+        }),
+      );
+      return false;
+    }
+
+    setBusyState(
+      pendingState ?? {
+        title: "Memproses perubahan",
+        description: "Mohon tunggu sebentar.",
+      },
+    );
+
+    try {
+      await backendFetchJson(pathname, {
+        method,
+        token,
+        json: payload,
+      });
+
+      await loadLevels();
+      router.replace(
+        buildToastHref(listHref, {
+          message: successMessage,
+          tone: "success",
+        }),
+      );
+      return true;
+    } catch (error) {
+      router.replace(
+        buildToastHref(errorRedirect, {
+          message:
+            error instanceof Error && error.message.trim()
+              ? error.message
+              : "Hak akses belum bisa diproses.",
+          tone: "error",
+        }),
+      );
+      return false;
+    } finally {
+      setBusyState(null);
+    }
+  }
 
   const filteredLevels = sortLevels(
     levels.filter((level) => {
@@ -149,17 +320,23 @@ export default async function AdminUserLevelsPage({
 
   return (
     <div className="space-y-3 sm:space-y-4">
+      <AdminBusyOverlay
+        visible={!!busyState}
+        title={busyState?.title ?? ""}
+        description={busyState?.description}
+      />
+
       <section className="surface-panel rounded-[2rem] p-4">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
-          User level management
+          Hak akses
         </p>
         <h2 className="mt-2 font-display text-3xl font-semibold text-ink">
-          Kelola master level user dashboard
+          Kelola kelompok kerja tim toko
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-ink-soft sm:text-base">
-          Level user dipakai untuk mengelompokkan staff berdasarkan fungsi
-          kerja. Dari sini admin bisa menambah, mengubah, atau menonaktifkan
-          level yang dipakai di modul user.
+          Hak akses dipakai untuk mengelompokkan staff berdasarkan tugasnya.
+          Dari sini Anda bisa menambah, mengubah, atau menonaktifkan kelompok
+          yang dipakai tim toko.
         </p>
       </section>
 
@@ -181,27 +358,22 @@ export default async function AdminUserLevelsPage({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 className="font-display text-2xl font-semibold text-ink">
-              Tambah level user
+              Tambah hak akses
             </h3>
             <p className="mt-2 text-sm leading-7 text-ink-soft">
-              Form insert dipindahkan ke modal supaya area master level tetap
-              ringkas dan fokus ke tabel data.
+              Form dibuat dalam modal supaya daftar kelompok kerja tetap ringkas
+              dan mudah dipantau.
             </p>
           </div>
           <AdminModal
-            title="Tambah level user"
-            description="Buat level kerja baru seperti operator gudang, admin produk, atau customer care agar pengelolaan user makin rapi."
-            triggerLabel="Tambah Level"
+            title="Tambah hak akses"
+            description="Buat kelompok kerja baru seperti operator gudang, admin produk, atau tim layanan agar pengelolaan akun makin rapi."
+            triggerLabel="Tambah Hak Akses"
           >
-            <form
-              action="/api/admin-user-levels/create"
-              method="post"
-              className="grid gap-3 md:grid-cols-2"
-            >
-              <input type="hidden" name="redirectTo" value={listHref} />
+            <form onSubmit={handleCreate} className="grid gap-3 md:grid-cols-2">
               <label className="block">
                 <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-                  Nama level
+                  Nama hak akses
                 </span>
                 <input
                   name="name"
@@ -212,7 +384,7 @@ export default async function AdminUserLevelsPage({
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-                  Kode level
+                  Kode hak akses
                 </span>
                 <input
                   name="code"
@@ -228,7 +400,7 @@ export default async function AdminUserLevelsPage({
                 <textarea
                   name="description"
                   rows={4}
-                  placeholder="Jelaskan fungsi utama level ini di dashboard."
+                  placeholder="Jelaskan tugas utama hak akses ini di toko."
                   className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
                 />
               </label>
@@ -250,7 +422,7 @@ export default async function AdminUserLevelsPage({
                   type="submit"
                   className="rounded-full border border-brand-deep bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-deep hover:text-white focus-visible:text-white"
                 >
-                  Buat Level Baru
+                  Simpan Hak Akses
                 </button>
               </div>
             </form>
@@ -263,31 +435,30 @@ export default async function AdminUserLevelsPage({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 className="font-display text-2xl font-semibold text-ink">
-                Edit level user
+                Edit hak akses
               </h3>
               <p className="mt-2 text-sm leading-7 text-ink-soft">
-                Perbarui nama, kode, deskripsi, dan status untuk level{" "}
+                Perbarui nama, kode, deskripsi, dan status untuk hak akses{" "}
                 {editLevel.name}.
               </p>
             </div>
-            <Link
+            <AdminIconLink
               href={listHref}
-              className="rounded-full border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:bg-white/70"
-            >
-              Tutup Edit
-            </Link>
+              label="Tutup edit hak akses"
+              icon={<CloseIcon />}
+              tone="danger"
+            />
           </div>
 
           <form
-            action="/api/admin-user-levels/update"
-            method="post"
+            key={editLevel.id}
+            onSubmit={handleUpdate}
             className="mt-5 grid gap-3 md:grid-cols-2"
           >
             <input type="hidden" name="id" value={editLevel.id} />
-            <input type="hidden" name="redirectTo" value={editReturnHref} />
             <label className="block">
               <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-                Nama level
+                Nama hak akses
               </span>
               <input
                 name="name"
@@ -298,7 +469,7 @@ export default async function AdminUserLevelsPage({
             </label>
             <label className="block">
               <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-                Kode level
+                Kode hak akses
               </span>
               <input
                 name="code"
@@ -351,17 +522,17 @@ export default async function AdminUserLevelsPage({
 
       <section className="surface-panel rounded-[2rem] p-3.5 sm:p-4">
         <form method="get" className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <label className="block xl:col-span-2">
-            <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-              Cari nama, kode, atau deskripsi level
-            </span>
-            <input
-              name="q"
-              defaultValue={q}
-              placeholder="Contoh: gudang, operator-gudang, customer"
-              className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
-            />
-          </label>
+            <label className="block xl:col-span-2">
+              <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
+                Cari nama, kode, atau deskripsi hak akses
+              </span>
+              <input
+                name="q"
+                defaultValue={q}
+                placeholder="Contoh: gudang, operator-gudang, layanan-pelanggan"
+                className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
+              />
+            </label>
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
               Status
@@ -407,8 +578,8 @@ export default async function AdminUserLevelsPage({
               defaultValue={sort}
               className="w-full rounded-xl border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
             >
-              <option value="newest">Level terbaru</option>
-              <option value="oldest">Level terlama</option>
+              <option value="newest">Hak akses terbaru</option>
+              <option value="oldest">Hak akses terlama</option>
               <option value="name-asc">Nama A-Z</option>
               <option value="name-desc">Nama Z-A</option>
             </select>
@@ -448,8 +619,8 @@ export default async function AdminUserLevelsPage({
 
       {pagination.items.length === 0 ? (
         <AdminTableEmptyState
-          title="Level user tidak ditemukan"
-          description="Coba longgarkan filter nama, kode, status, atau tanggal agar level user yang dicari lebih mudah terlihat."
+          title="Hak akses tidak ditemukan"
+          description="Coba longgarkan filter nama, kode, status, atau tanggal agar data yang dicari lebih mudah terlihat."
         />
       ) : (
         <>
@@ -462,7 +633,7 @@ export default async function AdminUserLevelsPage({
                   <th className="px-4 py-3">Deskripsi</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Dibuat</th>
-                  <th className="px-4 py-3">Update</th>
+                  <th className="px-4 py-3">Diperbarui</th>
                   <th className="px-4 py-3">Aksi</th>
                 </tr>
               </thead>
@@ -517,23 +688,12 @@ export default async function AdminUserLevelsPage({
                             label={`Edit ${level.name}`}
                             icon={<EditIcon />}
                           />
-                          <form
-                            action="/api/admin-user-levels/delete"
-                            method="post"
-                          >
-                            <input type="hidden" name="id" value={level.id} />
-                            <input
-                              type="hidden"
-                              name="redirectTo"
-                              value={listHref}
-                            />
-                            <AdminIconButton
-                              type="submit"
-                              label={`Hapus ${level.name}`}
-                              icon={<TrashIcon />}
-                              tone="danger"
-                            />
-                          </form>
+                          <AdminIconButton
+                            label={`Hapus ${level.name}`}
+                            icon={<TrashIcon />}
+                            tone="danger"
+                            onClick={() => handleDelete(level.id, level.name)}
+                          />
                         </div>
                       </td>
                     </tr>
@@ -555,5 +715,13 @@ export default async function AdminUserLevelsPage({
         </>
       )}
     </div>
+  );
+}
+
+export default function AdminUserLevelsPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminUserLevelsPageContent />
+    </Suspense>
   );
 }

@@ -4,6 +4,10 @@ export type SearchParamsRecord = Record<string, string | string[] | undefined>;
 
 export const adminPageSizeOptions = [10, 25, 50] as const;
 
+export function toSearchParamsRecord(searchParams: Iterable<[string, string]>) {
+  return Object.fromEntries(Array.from(searchParams)) as SearchParamsRecord;
+}
+
 export function readSearchParam(searchParams: SearchParamsRecord | undefined, key: string) {
   const value = searchParams?.[key];
   return Array.isArray(value) ? value[0] : value;

@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { Order, OrderStatus } from "@/entities/order/model/types";
 import { getAdminOrders } from "@/shared/api/admin-order-service";
-import { requireAdminPageAccess } from "@/shared/auth/admin-page-access";
+import { useAdminPageAccess } from "@/shared/auth/admin-page-access";
 import {
   adminPageSizeOptions,
   matchesDateRange,
@@ -19,16 +23,13 @@ import {
   AdminTableShell,
 } from "@/shared/ui/admin-table";
 
-type AdminOrdersPageProps = {
-  searchParams?: Promise<SearchParamsRecord>;
-};
-
 const orderStatusOptions: OrderStatus[] = [
   "Baru",
   "Diproses",
   "Siap Kirim",
   "Selesai",
 ];
+
 const orderSortOptions = [
   "newest",
   "oldest",
@@ -76,11 +77,46 @@ function getStatusBadgeClass(status: OrderStatus) {
   }
 }
 
-export default async function AdminOrdersPage({
-  searchParams,
-}: AdminOrdersPageProps) {
-  await requireAdminPageAccess({ allowedRoles: ["admin"] });
-  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+function AdminOrdersPageContent() {
+  const searchParams = useSearchParams();
+  const { token, isAllowed, isReady } = useAdminPageAccess({
+    allowedRoles: ["admin"],
+  });
+  const [orders, setOrders] = useState<Order[]>([]);
+  const resolvedSearchParams = Object.fromEntries(
+    searchParams.entries(),
+  ) as SearchParamsRecord;
+
+  const loadOrders = useCallback(async () => {
+    if (!token?.trim()) {
+      return;
+    }
+
+    setOrders(await getAdminOrders(token));
+  }, [token]);
+
+  useEffect(() => {
+    if (!isAllowed) {
+      return;
+    }
+
+    const loadTimer = window.setTimeout(() => {
+      void loadOrders();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(loadTimer);
+    };
+  }, [isAllowed, loadOrders]);
+
+  if (!isReady || !isAllowed) {
+    return (
+      <div className="surface-panel rounded-[1.8rem] p-6 text-sm text-ink-soft">
+        Memuat daftar pesanan...
+      </div>
+    );
+  }
+
   const page = readNumberSearchParam(resolvedSearchParams, "page", 1);
   const pageSize = readNumberSearchParam(
     resolvedSearchParams,
@@ -95,7 +131,6 @@ export default async function AdminOrdersPage({
   const dateTo = readSearchParam(resolvedSearchParams, "dateTo");
   const sort =
     readSearchParam(resolvedSearchParams, "sort") ?? orderSortOptions[0];
-  const orders = await getAdminOrders();
 
   const filteredOrders = sortOrders(
     orders.filter((order) => {
@@ -117,9 +152,7 @@ export default async function AdminOrdersPage({
   );
 
   const pagination = paginateItems(filteredOrders, page, pageSize);
-  const vehicleOptions = [
-    ...new Set(orders.map((order) => order.vehicle)),
-  ].sort();
+  const vehicleOptions = [...new Set(orders.map((order) => order.vehicle))].sort();
   const totalRevenue = filteredOrders.reduce(
     (sum, order) => sum + order.total,
     0,
@@ -145,15 +178,15 @@ export default async function AdminOrdersPage({
     <div className="space-y-3 sm:space-y-4">
       <section className="surface-panel rounded-[2rem] p-4">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
-          Order management
+          Pesanan
         </p>
         <h2 className="mt-2 font-display text-3xl font-semibold text-ink">
-          Pantau antrean pesanan dengan lebih cepat
+          Pantau pesanan yang masuk dengan lebih cepat
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-ink-soft sm:text-base">
-          Semua pesanan dirapikan dalam tabel yang lebih ringkas supaya tim bisa
-          scan status, nilai order, dan detail customer tanpa perlu membuka
-          kartu yang terlalu besar.
+          Semua pesanan dirapikan dalam tabel yang ringkas supaya tim bisa
+          melihat status, nilai belanja, dan detail pelanggan tanpa membuka
+          kartu satu per satu.
         </p>
       </section>
 
@@ -175,7 +208,7 @@ export default async function AdminOrdersPage({
         <form method="get" className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <label className="block xl:col-span-2">
             <span className="mb-1.5 block text-xs font-semibold text-ink sm:text-sm">
-              Cari ID pesanan, nama customer, atau tipe motor
+              Cari ID pesanan, nama pelanggan, atau tipe motor
             </span>
             <input
               name="q"
@@ -300,7 +333,7 @@ export default async function AdminOrdersPage({
               <thead className="bg-white/70 text-left text-xs font-semibold uppercase tracking-[0.18em] text-muted">
                 <tr>
                   <th className="px-4 py-3">Pesanan</th>
-                  <th className="px-4 py-3">Customer</th>
+                  <th className="px-4 py-3">Pelanggan</th>
                   <th className="px-4 py-3">Motor</th>
                   <th className="px-4 py-3">Item</th>
                   <th className="px-4 py-3">Total</th>
@@ -359,5 +392,13 @@ export default async function AdminOrdersPage({
         </>
       )}
     </div>
+  );
+}
+
+export default function AdminOrdersPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminOrdersPageContent />
+    </Suspense>
   );
 }
