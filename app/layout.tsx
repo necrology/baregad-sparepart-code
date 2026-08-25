@@ -1,3 +1,5 @@
+import { access } from "node:fs/promises";
+import { join } from "node:path";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Manrope, Space_Grotesk } from "next/font/google";
@@ -17,21 +19,90 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
 });
 
-function isSocialPreviewImage(value: string | null | undefined) {
-  const normalizedValue = value?.trim().toLowerCase() ?? "";
+function isSameOriginPublicAsset(value: string) {
+  return (
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    !value.startsWith("/api/") &&
+    !value.startsWith("/uploads/")
+  );
+}
 
-  if (!normalizedValue) {
+async function publicAssetExists(value: string) {
+  try {
+    const [pathname] = value.split(/[?#]/, 1);
+    await access(join(process.cwd(), "public", pathname.replace(/^\/+/, "")));
+    return true;
+  } catch {
     return false;
   }
+}
 
-  return /\.(png|jpe?g|gif|webp)(\?.*)?$/.test(normalizedValue);
+async function remoteAssetExists(value: string, metadataBaseUrl: string) {
+  try {
+    const targetUrl = new URL(value, metadataBaseUrl);
+    const response = await fetch(targetUrl, {
+      method: "HEAD",
+      cache: "no-store",
+      redirect: "follow",
+    });
+
+    if (response.ok) {
+      return true;
+    }
+
+    if (response.status !== 405) {
+      return false;
+    }
+
+    const fallbackResponse = await fetch(targetUrl, {
+      method: "GET",
+      cache: "no-store",
+      redirect: "follow",
+    });
+
+    return fallbackResponse.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveMetadataIcon(
+  preferredValue: string,
+  metadataBaseUrl: string,
+  fallbackValue = defaultPublicAppConfig.faviconUrl,
+) {
+  const candidates = [preferredValue, fallbackValue];
+
+  for (const candidate of candidates) {
+    const trimmedCandidate = candidate.trim();
+
+    if (!trimmedCandidate) {
+      continue;
+    }
+
+    if (isSameOriginPublicAsset(trimmedCandidate)) {
+      if (await publicAssetExists(trimmedCandidate)) {
+        return trimmedCandidate;
+      }
+
+      continue;
+    }
+
+    if (await remoteAssetExists(trimmedCandidate, metadataBaseUrl)) {
+      return trimmedCandidate;
+    }
+  }
+
+  return fallbackValue;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
   const appConfig = await getPublicAppConfig();
-  const shareImage = isSocialPreviewImage(appConfig.logoUrl)
-    ? appConfig.logoUrl
-    : defaultPublicAppConfig.logoUrl;
+  const faviconUrl = await resolveMetadataIcon(
+    appConfig.faviconUrl,
+    appConfig.metadataBaseUrl,
+  );
 
   return {
     metadataBase: new URL(appConfig.metadataBaseUrl),
@@ -42,9 +113,9 @@ export async function generateMetadata(): Promise<Metadata> {
     description: appConfig.appDescription,
     keywords: appConfig.seoKeywords,
     icons: {
-      icon: appConfig.faviconUrl,
-      shortcut: appConfig.faviconUrl,
-      apple: appConfig.faviconUrl,
+      icon: faviconUrl,
+      shortcut: faviconUrl,
+      apple: faviconUrl,
     },
     openGraph: {
       title: appConfig.appName,
@@ -52,18 +123,11 @@ export async function generateMetadata(): Promise<Metadata> {
       type: "website",
       url: appConfig.metadataBaseUrl,
       siteName: appConfig.appName,
-      images: [
-        {
-          url: shareImage,
-          alt: appConfig.appName,
-        },
-      ],
     },
     twitter: {
       card: "summary_large_image",
       title: appConfig.appName,
       description: appConfig.appDescription,
-      images: [shareImage],
     },
   };
 }

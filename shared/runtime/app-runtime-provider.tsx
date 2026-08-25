@@ -44,24 +44,6 @@ type AppRuntimeProviderProps = {
 const BrandingContext = createContext<BrandingContextValue | null>(null);
 const AdminSessionContext = createContext<AdminSessionContextValue | null>(null);
 
-function replaceIconLinks(href: string) {
-  document.head
-    .querySelectorAll<HTMLLinkElement>(
-      'link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]',
-    )
-    .forEach((link) => {
-      link.remove();
-    });
-
-  ["icon", "shortcut icon", "apple-touch-icon"].forEach((rel) => {
-    const link = document.createElement("link");
-    link.setAttribute("rel", rel);
-    link.setAttribute("href", href);
-    link.setAttribute("data-managed-icon", "true");
-    document.head.appendChild(link);
-  });
-}
-
 export function AppRuntimeProvider({ children }: AppRuntimeProviderProps) {
   const [branding, setBranding] = useState(defaultPublicAppConfig);
   const [isBrandingReady, setIsBrandingReady] = useState(false);
@@ -171,14 +153,6 @@ export function AppRuntimeProvider({ children }: AppRuntimeProviderProps) {
     setIsReady(true);
     void refreshSession(storedAuth);
   }, [logout, refreshSession]);
-
-  useEffect(() => {
-    if (!branding.faviconUrl.trim()) {
-      return;
-    }
-
-    replaceIconLinks(branding.faviconUrl);
-  }, [branding.faviconUrl]);
 
   return (
     <BrandingContext.Provider

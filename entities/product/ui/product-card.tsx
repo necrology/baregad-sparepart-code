@@ -11,11 +11,11 @@ type ProductCardProps = {
 
 export function ProductCard({ product }: ProductCardProps) {
   return (
-    <article className="surface-strong card-hover overflow-hidden rounded-[1.5rem]">
+    <article className="surface-strong card-hover flex h-full min-w-0 flex-col overflow-hidden rounded-[1.5rem]">
       <div className="p-2">
         <ProductPreview product={product} compact />
       </div>
-      <div className="space-y-2.5 px-3 pb-3 pt-0.5 sm:px-4 sm:pb-4">
+      <div className="flex flex-1 flex-col space-y-2.5 px-3 pb-3 pt-0.5 sm:px-4 sm:pb-4">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="rounded-full bg-brand-soft px-2 py-1 text-[10px] font-semibold text-brand-deep">
             {product.category}
@@ -62,8 +62,8 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2">
-          <div>
+        <div className="mt-auto space-y-2 pt-1">
+          <div className="min-w-0">
             <RatingStars
               value={product.rating}
               size="sm"
@@ -73,7 +73,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
           <Link
             href={buildProductHref(product.slug)}
-            className="inline-flex min-w-16 items-center justify-center rounded-full border border-brand-deep bg-brand px-3 py-1.5 text-[11px] leading-none font-semibold whitespace-nowrap text-white shadow-[0_6px_16px_rgba(45,103,156,0.24)] transition hover:bg-brand-deep hover:text-white hover:shadow-[0_8px_20px_rgba(35,73,111,0.28)] focus-visible:text-white sm:min-w-20 sm:px-4 sm:py-2 sm:text-sm"
+            className="inline-flex w-full min-w-16 items-center justify-center rounded-full border border-brand-deep bg-brand px-3 py-1.5 text-center text-[11px] leading-none font-semibold whitespace-nowrap text-white shadow-[0_6px_16px_rgba(45,103,156,0.24)] transition hover:bg-brand-deep hover:text-white hover:shadow-[0_8px_20px_rgba(35,73,111,0.28)] focus-visible:text-white sm:min-w-20 sm:px-4 sm:py-2 sm:text-sm"
           >
             Detail
           </Link>

@@ -5,6 +5,7 @@ import { Suspense, type FormEvent, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { withAppPath, withoutBasePath } from "@/shared/config/base-path";
 import { useAdminSession } from "@/shared/runtime/app-runtime-provider";
+import { AppLoadingBeacon } from "@/shared/ui/app-loading";
 import { Container } from "@/shared/ui/container";
 
 function AdminLoginPageContent() {
@@ -95,9 +96,16 @@ function AdminLoginPageContent() {
           <button
             type="submit"
             disabled={isAuthenticating}
-            className="w-full rounded-full border border-brand-deep bg-brand px-4 py-2 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(35,73,111,0.18)] transition hover:bg-brand-deep hover:text-white focus-visible:text-white"
+            className="flex w-full items-center justify-center gap-2 rounded-full border border-brand-deep bg-brand px-4 py-2 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(35,73,111,0.18)] transition hover:bg-brand-deep hover:text-white focus-visible:text-white disabled:cursor-not-allowed disabled:opacity-90"
           >
-            {isAuthenticating ? "Memeriksa akun..." : "Masuk Admin"}
+            {isAuthenticating ? (
+              <>
+                <AppLoadingBeacon compact className="h-5 w-5 scale-[0.45]" />
+                <span>Memeriksa akun...</span>
+              </>
+            ) : (
+              "Masuk Admin"
+            )}
           </button>
         </form>
 

@@ -1,15 +1,14 @@
 import type { ProductReview } from "@/entities/product-review/model/types";
-import { backendFetchJson } from "@/shared/api/backend-client";
-import { getPublicBackendBaseUrl } from "@/shared/config/public-env";
+import { appFetchJson } from "@/shared/api/app-client";
 
 export async function getApprovedProductReviews(slug: string) {
-  if (!getPublicBackendBaseUrl() || !slug.trim()) {
+  if (!slug.trim()) {
     return [] as ProductReview[];
   }
 
   try {
-    return await backendFetchJson<ProductReview[]>(
-      `/catalog/products/${encodeURIComponent(slug)}/reviews`,
+    return await appFetchJson<ProductReview[]>(
+      `/review-api/product-reviews/${encodeURIComponent(slug)}`,
     );
   } catch {
     return [] as ProductReview[];
@@ -23,13 +22,25 @@ export async function submitProductReview(
     customerEmail: string;
     rating: number;
     comment: string;
+    imageFile?: File | null;
   },
 ) {
-  return backendFetchJson<ProductReview>(
-    `/catalog/products/${encodeURIComponent(slug)}/reviews`,
+  const formData = new FormData();
+
+  formData.set("customerName", payload.customerName);
+  formData.set("customerEmail", payload.customerEmail);
+  formData.set("rating", String(payload.rating));
+  formData.set("comment", payload.comment);
+
+  if (payload.imageFile instanceof File && payload.imageFile.size > 0) {
+    formData.set("image", payload.imageFile);
+  }
+
+  return appFetchJson<ProductReview>(
+    `/review-api/product-reviews/${encodeURIComponent(slug)}`,
     {
-      method: "POST",
-      json: payload,
+    method: "POST",
+    formData,
     },
   );
 }

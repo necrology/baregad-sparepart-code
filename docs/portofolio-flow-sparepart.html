@@ -1,0 +1,1050 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portfolio Flow Process Aplikasi E-commerce Sparepart</title>
+  <style>
+    :root {
+      --ink: #18324c;
+      --muted: #6f8398;
+      --paper: #f4f7fa;
+      --white: #ffffff;
+      --line: #d8e2eb;
+      --blue: #4c91c8;
+      --blue-deep: #276995;
+      --blue-soft: #dcecf8;
+      --green: #20c966;
+      --green-soft: #e4f8eb;
+      --coral: #ed6f60;
+      --coral-soft: #fde9e5;
+      --amber: #f1aa38;
+      --charcoal: #252932;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    @page {
+      size: 13.333in 7.5in;
+      margin: 0;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: #cfd8e0;
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .slide {
+      position: relative;
+      width: 13.333in;
+      height: 7.5in;
+      overflow: hidden;
+      break-after: page;
+      page-break-after: always;
+      background: var(--paper);
+      padding: 0.45in 0.58in 0.38in;
+    }
+
+    .slide:last-child {
+      break-after: auto;
+      page-break-after: auto;
+    }
+
+    .slide::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 2.3in;
+      height: 0.12in;
+      background: var(--blue);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    .kicker {
+      margin: 0 0 0.08in;
+      color: var(--blue-deep);
+      font-size: 10pt;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .slide-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.25in;
+      min-height: 0.62in;
+      margin-bottom: 0.16in;
+    }
+
+    .slide-head h2 {
+      margin: 0;
+      max-width: 9.2in;
+      font-size: 24pt;
+      line-height: 1.08;
+    }
+
+    .slide-head p {
+      max-width: 4.3in;
+      margin: 0.05in 0 0;
+      color: var(--muted);
+      font-size: 10pt;
+      line-height: 1.45;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 0.3in;
+      padding: 0 0.14in;
+      border-radius: 999px;
+      white-space: nowrap;
+      font-size: 8pt;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .status.live {
+      color: var(--blue-deep);
+      background: var(--blue-soft);
+    }
+
+    .status.admin {
+      color: #5d4631;
+      background: #f5e8d7;
+    }
+
+    .status.concept {
+      color: #187545;
+      background: var(--green-soft);
+    }
+
+    .page-no {
+      position: absolute;
+      right: 0.58in;
+      bottom: 0.18in;
+      z-index: 2;
+      color: var(--muted);
+      font-size: 8pt;
+      font-weight: 700;
+    }
+
+    .walkthrough {
+      display: grid;
+      grid-template-columns: 8.75in minmax(0, 1fr);
+      gap: 0.32in;
+      align-items: stretch;
+      height: 5.7in;
+    }
+
+    .chrome {
+      position: relative;
+      height: 5.56in;
+      overflow: hidden;
+      border: 1px solid #c7d4df;
+      border-radius: 0.16in;
+      background: #dce8f2;
+      box-shadow: 0 14px 35px rgba(31, 65, 92, 0.16);
+    }
+
+    .chrome::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 2;
+      height: 0.25in;
+      border-bottom: 1px solid #d7e1ea;
+      background:
+        radial-gradient(circle at 0.13in 0.125in, #ec6b62 0 0.035in, transparent 0.04in),
+        radial-gradient(circle at 0.27in 0.125in, #f0b34b 0 0.035in, transparent 0.04in),
+        radial-gradient(circle at 0.41in 0.125in, #53b876 0 0.035in, transparent 0.04in),
+        #f7f9fb;
+    }
+
+    .chrome img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      padding-top: 0.25in;
+      object-fit: cover;
+      object-position: top center;
+    }
+
+    .chrome.contain img {
+      object-fit: contain;
+      background: #eaf3fa;
+    }
+
+    .notes {
+      display: flex;
+      min-width: 0;
+      height: 5.56in;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 0.1in 0 0.05in 0.2in;
+      border-left: 3px solid var(--blue);
+    }
+
+    .notes h3 {
+      margin: 0 0 0.08in;
+      font-size: 13pt;
+    }
+
+    .notes p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9.5pt;
+      line-height: 1.5;
+    }
+
+    .note-block {
+      padding-bottom: 0.18in;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .note-block:last-of-type {
+      border-bottom: 0;
+    }
+
+    .note-label {
+      display: block;
+      margin-bottom: 0.07in;
+      color: var(--blue-deep);
+      font-size: 8pt;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .flow-list {
+      display: grid;
+      gap: 0.07in;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: flow;
+    }
+
+    .flow-list li {
+      display: grid;
+      grid-template-columns: 0.27in 1fr;
+      gap: 0.08in;
+      align-items: start;
+      color: var(--ink);
+      font-size: 8.8pt;
+      line-height: 1.35;
+      counter-increment: flow;
+    }
+
+    .flow-list li::before {
+      content: counter(flow);
+      display: grid;
+      width: 0.24in;
+      height: 0.24in;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--blue-soft);
+      color: var(--blue-deep);
+      font-size: 7.5pt;
+      font-weight: 800;
+    }
+
+    .cover {
+      display: grid;
+      grid-template-columns: 4.35in 1fr;
+      gap: 0.42in;
+      padding: 0;
+      background: var(--charcoal);
+      color: #fff;
+    }
+
+    .cover::after {
+      width: 4.8in;
+      height: 0.16in;
+      background: var(--green);
+    }
+
+    .cover-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0.7in 0 0.65in 0.68in;
+    }
+
+    .cover-copy .kicker {
+      color: #87c6f2;
+      font-size: 11pt;
+    }
+
+    .cover-copy h1 {
+      margin: 0.18in 0 0.22in;
+      font-size: 38pt;
+      line-height: 1.03;
+    }
+
+    .cover-copy p {
+      max-width: 3.25in;
+      margin: 0;
+      color: #bfc9d4;
+      font-size: 12pt;
+      line-height: 1.55;
+    }
+
+    .cover-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.08in;
+      margin-top: 0.38in;
+    }
+
+    .cover-tags span {
+      padding: 0.08in 0.13in;
+      border: 1px solid #58606d;
+      border-radius: 999px;
+      color: #d8e0e8;
+      font-size: 8pt;
+      font-weight: 700;
+    }
+
+    .cover-media {
+      position: relative;
+      overflow: hidden;
+      margin: 0.42in 0.42in 0.42in 0;
+      border-radius: 0.22in;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+    }
+
+    .cover-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+    }
+
+    .cover-media::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: inherit;
+      pointer-events: none;
+    }
+
+    .scope-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.2in;
+      margin-top: 0.18in;
+    }
+
+    .scope-band {
+      min-height: 4.62in;
+      padding: 0.28in;
+      border-top: 0.07in solid var(--blue);
+      background: var(--white);
+      box-shadow: 0 12px 28px rgba(31, 65, 92, 0.08);
+    }
+
+    .scope-band.admin-band {
+      border-top-color: var(--charcoal);
+    }
+
+    .scope-band.concept-band {
+      border-top-color: var(--green);
+    }
+
+    .scope-band h3 {
+      margin: 0.12in 0;
+      font-size: 17pt;
+    }
+
+    .scope-band > p {
+      min-height: 0.72in;
+      color: var(--muted);
+      font-size: 9.5pt;
+      line-height: 1.5;
+    }
+
+    .scope-flow {
+      display: grid;
+      gap: 0.09in;
+      margin-top: 0.18in;
+    }
+
+    .scope-step {
+      display: grid;
+      grid-template-columns: 0.35in 1fr;
+      gap: 0.1in;
+      align-items: center;
+      min-height: 0.48in;
+      padding: 0.08in 0.12in;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+    }
+
+    .scope-step span {
+      display: grid;
+      width: 0.3in;
+      height: 0.3in;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--blue-soft);
+      color: var(--blue-deep);
+      font-size: 8pt;
+      font-weight: 800;
+    }
+
+    .concept-band .scope-step span {
+      color: #187545;
+      background: var(--green-soft);
+    }
+
+    .scope-step strong {
+      display: block;
+      font-size: 9pt;
+    }
+
+    .scope-step small {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 7.5pt;
+    }
+
+    .wa-layout {
+      display: grid;
+      grid-template-columns: 8.65in 1fr;
+      gap: 0.35in;
+      height: 5.65in;
+    }
+
+    .wa-layout .chrome {
+      height: 5.55in;
+    }
+
+    .current-flow {
+      display: flex;
+      height: 5.55in;
+      flex-direction: column;
+      justify-content: space-between;
+      padding-left: 0.18in;
+      border-left: 3px solid var(--green);
+    }
+
+    .current-flow h3 {
+      margin-bottom: 0.12in;
+      font-size: 14pt;
+    }
+
+    .current-flow .flow-list li::before {
+      color: #187545;
+      background: var(--green-soft);
+    }
+
+    .flow-result {
+      padding: 0.16in;
+      border: 1px solid #b8e8c8;
+      background: var(--green-soft);
+    }
+
+    .flow-result strong {
+      display: block;
+      color: #187545;
+      font-size: 9pt;
+    }
+
+    .flow-result p {
+      margin: 0.05in 0 0;
+      color: #4f765f;
+      font-size: 8pt;
+      line-height: 1.4;
+    }
+
+    .split-shots {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.2in;
+      height: 5.35in;
+    }
+
+    .shot-stack {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+    }
+
+    .shot-stack .chrome {
+      height: 4.75in;
+    }
+
+    .shot-stack h3 {
+      margin: 0.12in 0 0.03in;
+      font-size: 12pt;
+    }
+
+    .shot-stack p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 8.5pt;
+    }
+
+    .journey {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.13in;
+      margin-top: 0.28in;
+    }
+
+    .journey::before {
+      content: "";
+      position: absolute;
+      top: 0.38in;
+      left: 0.5in;
+      right: 0.5in;
+      height: 2px;
+      background: #abc9df;
+    }
+
+    .journey-step {
+      position: relative;
+      z-index: 1;
+      min-height: 2.24in;
+      padding: 0.18in 0.14in;
+      border: 1px solid var(--line);
+      background: #fff;
+      text-align: center;
+    }
+
+    .journey-step .number {
+      display: grid;
+      width: 0.48in;
+      height: 0.48in;
+      margin: 0 auto 0.17in;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--blue);
+      color: #fff;
+      font-size: 10pt;
+      font-weight: 800;
+    }
+
+    .journey-step.green .number {
+      background: var(--green);
+    }
+
+    .journey-step h3 {
+      margin-bottom: 0.08in;
+      font-size: 11pt;
+    }
+
+    .journey-step p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 8pt;
+      line-height: 1.42;
+    }
+
+    .journey-note {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.18in;
+      margin-top: 0.25in;
+    }
+
+    .journey-note div {
+      min-height: 1.17in;
+      padding: 0.17in;
+      border-left: 4px solid var(--blue);
+      background: #fff;
+    }
+
+    .journey-note div:last-child {
+      border-left-color: var(--green);
+    }
+
+    .journey-note strong {
+      display: block;
+      font-size: 10pt;
+    }
+
+    .journey-note p {
+      margin: 0.05in 0 0;
+      color: var(--muted);
+      font-size: 8.5pt;
+      line-height: 1.4;
+    }
+
+    .final-grid {
+      display: grid;
+      grid-template-columns: 8.55in 1fr;
+      gap: 0.32in;
+      height: 5.62in;
+    }
+
+    .final-grid .chrome {
+      height: 5.52in;
+    }
+
+    .final-copy {
+      display: flex;
+      height: 5.52in;
+      flex-direction: column;
+      justify-content: space-between;
+      padding-left: 0.18in;
+      border-left: 3px solid var(--green);
+    }
+
+    .mini-flow {
+      display: grid;
+      gap: 0.08in;
+    }
+
+    .mini-flow div {
+      display: grid;
+      grid-template-columns: 0.31in 1fr;
+      gap: 0.09in;
+      align-items: center;
+      min-height: 0.47in;
+      padding: 0.07in 0.1in;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .mini-flow span {
+      display: grid;
+      width: 0.27in;
+      height: 0.27in;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--green-soft);
+      color: #187545;
+      font-size: 7pt;
+      font-weight: 800;
+    }
+
+    .mini-flow strong {
+      font-size: 8.5pt;
+    }
+
+    .final-copy h3 {
+      margin-bottom: 0.1in;
+      font-size: 15pt;
+    }
+
+    .final-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9pt;
+      line-height: 1.5;
+    }
+
+    @media print {
+      html,
+      body {
+        background: transparent;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="slide cover">
+    <div class="cover-copy">
+      <p class="kicker">Portfolio Flow Process</p>
+      <h1>Aplikasi E-commerce Sparepart Motor</h1>
+      <p>Walkthrough visual aplikasi customer, area admin, alur pembelian aktif melalui WhatsApp, dan rancangan keranjang sampai pembayaran melalui payment gateway.</p>
+      <div class="cover-tags">
+        <span>Customer Storefront</span>
+        <span>Admin Workspace</span>
+        <span>WhatsApp Purchase</span>
+        <span>Payment Gateway Concept</span>
+      </div>
+    </div>
+    <div class="cover-media"><img src="portfolio-assets/customer-home.png" alt="Tampilan beranda aplikasi"></div>
+    <span class="page-no">01</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">Ruang Lingkup</p><h2>Tiga bagian utama dalam aplikasi</h2></div>
+      <p>Dokumen memisahkan fitur yang sudah berjalan dan rancangan pengembangan agar alurnya mudah dipahami.</p>
+    </div>
+    <div class="scope-grid">
+      <article class="scope-band">
+        <span class="status live">Layar live</span>
+        <h3>Customer Storefront</h3>
+        <p>Area publik untuk mencari, membandingkan, melihat detail, mengirim ulasan, dan menghubungi admin.</p>
+        <div class="scope-flow">
+          <div class="scope-step"><span>1</span><div><strong>Beranda</strong><small>Pencarian dan produk pilihan</small></div></div>
+          <div class="scope-step"><span>2</span><div><strong>Katalog</strong><small>Filter, sortir, dan kartu produk</small></div></div>
+          <div class="scope-step"><span>3</span><div><strong>Detail Produk</strong><small>Harga, stok, spesifikasi, ulasan</small></div></div>
+          <div class="scope-step"><span>4</span><div><strong>WhatsApp</strong><small>Pembelian dilanjutkan ke admin</small></div></div>
+        </div>
+      </article>
+      <article class="scope-band admin-band">
+        <span class="status admin">Modul aktif - data contoh</span>
+        <h3>Admin Workspace</h3>
+        <p>Area operasional untuk memantau aktivitas toko dan mengelola seluruh isi aplikasi.</p>
+        <div class="scope-flow">
+          <div class="scope-step"><span>1</span><div><strong>Ringkasan</strong><small>Produk, pesanan, stok, omzet</small></div></div>
+          <div class="scope-step"><span>2</span><div><strong>Operasional</strong><small>Barang, pesanan, dan ulasan</small></div></div>
+          <div class="scope-step"><span>3</span><div><strong>Konfigurasi</strong><small>Nama, logo, teks, kontak</small></div></div>
+          <div class="scope-step"><span>4</span><div><strong>Tim</strong><small>Akun dan hak akses</small></div></div>
+        </div>
+      </article>
+      <article class="scope-band concept-band">
+        <span class="status concept">Rancangan e-commerce</span>
+        <h3>Cart, Checkout, Payment</h3>
+        <p>Pengembangan alur transaksi agar pilihan produk tersimpan dan pembayaran diproses melalui gateway.</p>
+        <div class="scope-flow">
+          <div class="scope-step"><span>1</span><div><strong>Tambah Produk</strong><small>Pilih jumlah dan simpan</small></div></div>
+          <div class="scope-step"><span>2</span><div><strong>Keranjang</strong><small>Atur item dan total</small></div></div>
+          <div class="scope-step"><span>3</span><div><strong>Checkout</strong><small>Data pembeli dan pengiriman</small></div></div>
+          <div class="scope-step"><span>4</span><div><strong>Payment Gateway</strong><small>Xendit/Midtrans dan status lunas</small></div></div>
+        </div>
+      </article>
+    </div>
+    <span class="page-no">02</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">Customer 01</p><h2>Beranda dan pencarian cepat</h2></div>
+      <span class="status live">Layar live</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/customer-home.png" alt="Beranda customer"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Isi layar</span><h3>Pintu masuk katalog</h3><p>Header, pencarian global, informasi jumlah produk, stok siap jual, kategori, dan produk dari beranda.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Membantu pelanggan memahami isi toko dan memulai pencarian tanpa banyak langkah.</p></div>
+        <div class="note-block"><span class="note-label">Flow</span><ol class="flow-list"><li>Ketik nama, brand, SKU, atau kode motor.</li><li>Pilih ringkasan produk atau kategori.</li><li>Masuk ke katalog atau detail barang.</li></ol></div>
+      </aside>
+    </div>
+    <span class="page-no">03</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">Customer 02</p><h2>Katalog, filter, dan perbandingan produk</h2></div>
+      <span class="status live">Layar live</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/customer-catalog.png" alt="Katalog customer"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Isi layar</span><h3>Daftar 56 produk</h3><p>Sortir, pencarian, kategori, brand, tipe motor, kode motor, rentang harga, stok, rating, dan tombol detail.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Mempercepat pencarian sparepart yang sesuai kebutuhan motor dan anggaran pelanggan.</p></div>
+        <div class="note-block"><span class="note-label">Flow</span><ol class="flow-list"><li>Pilih filter atau urutan produk.</li><li>Bandingkan harga, stok, dan kecocokan.</li><li>Buka detail produk terpilih.</li></ol></div>
+      </aside>
+    </div>
+    <span class="page-no">04</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">Customer 03</p><h2>Detail produk dan keputusan pembelian</h2></div>
+      <span class="status live">Layar live</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/customer-detail.png" alt="Detail produk"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Isi layar</span><h3>Informasi produk lengkap</h3><p>Foto, brand, nama, deskripsi, harga, stok, estimasi proses, gudang, spesifikasi, dan kompatibilitas motor.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Memberi keyakinan sebelum pelanggan menghubungi admin untuk membeli.</p></div>
+        <div class="note-block"><span class="note-label">Aksi utama</span><p>Tombol <strong>Beli via Admin WA</strong> meneruskan produk yang sedang dilihat ke alur komunikasi pembelian.</p></div>
+      </aside>
+    </div>
+    <span class="page-no">05</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">Customer 04</p><h2>Alur pembelian yang berjalan saat ini</h2></div>
+      <span class="status live">Aktif melalui WhatsApp</span>
+    </div>
+    <div class="wa-layout">
+      <div class="chrome"><img src="portfolio-assets/customer-wa-modal.png" alt="Pemilihan admin WhatsApp"></div>
+      <aside class="current-flow">
+        <div>
+          <h3>Customer flow</h3>
+          <ol class="flow-list">
+            <li>Pelanggan membuka detail produk.</li>
+            <li><span>Pilih <strong>Beli via Admin WA</strong>.</span></li>
+            <li>Pilih admin yang tersedia.</li>
+            <li>WhatsApp terbuka dengan nama produk, SKU, dan harga.</li>
+            <li>Admin mengecek stok dan melanjutkan transaksi.</li>
+          </ol>
+        </div>
+        <div class="flow-result"><strong>Hasil akhir</strong><p>Pembelian masih berupa komunikasi langsung. Belum ada keranjang, checkout, atau pembayaran di aplikasi.</p></div>
+      </aside>
+    </div>
+    <span class="page-no">06</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">Customer 05</p><h2>Ulasan dan bukti pengalaman pelanggan</h2></div>
+      <span class="status live">Layar live</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/customer-review.png" alt="Form dan ringkasan ulasan"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Isi layar</span><h3>Form ulasan produk</h3><p>Nama, email, rating, komentar, foto, ringkasan rating, status moderasi, dan komentar yang sudah tayang.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Mengumpulkan pengalaman pemakaian yang membantu pelanggan lain memilih produk.</p></div>
+        <div class="note-block"><span class="note-label">Flow</span><ol class="flow-list"><li>Pelanggan mengirim ulasan.</li><li>Ulasan masuk ke moderasi admin.</li><li>Ulasan yang disetujui tampil di produk.</li></ol></div>
+      </aside>
+    </div>
+    <span class="page-no">07</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">Admin 01</p><h2>Login dan pemisahan area pengelolaan</h2></div>
+      <span class="status live">Layar live</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/customer-admin-login.png" alt="Login admin"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Isi layar</span><h3>Akses khusus admin</h3><p>Username, password, tombol masuk, dan jalur kembali ke area toko.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Memisahkan aktivitas belanja publik dari pengelolaan data dan operasional toko.</p></div>
+        <div class="note-block"><span class="note-label">Flow admin</span><ol class="flow-list"><li>Login dengan akun yang aktif.</li><li>Sistem menampilkan menu sesuai akses.</li><li>Admin masuk ke ringkasan atau modul kerja.</li></ol></div>
+      </aside>
+    </div>
+    <span class="page-no">08</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">Admin 02</p><h2>Dashboard operasional toko</h2></div>
+      <span class="status admin">Modul aktif - data contoh</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/admin-dashboard.png" alt="Dashboard admin"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Isi layar</span><h3>Ringkasan harian</h3><p>Produk aktif, pesanan hari ini, stok tipis, omzet, pesanan terbaru, produk populer, dan distribusi kategori.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Memberi gambaran cepat tentang kondisi toko dan pekerjaan yang perlu diprioritaskan.</p></div>
+        <div class="note-block"><span class="note-label">Flow</span><ol class="flow-list"><li>Admin melihat indikator utama.</li><li>Pilih pesanan atau produk yang perlu ditangani.</li><li>Lanjut ke modul operasional terkait.</li></ol></div>
+      </aside>
+    </div>
+    <span class="page-no">09</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">Admin 03</p><h2>Pengelolaan barang dan stok</h2></div>
+      <span class="status admin">Modul aktif</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/admin-products.png" alt="Pengelolaan produk"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Isi layar</span><h3>Katalog internal</h3><p>Tambah barang, pencarian, filter brand, kategori, kendaraan, stok, urutan, daftar produk, harga, dan kode motor.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Menjaga informasi katalog publik tetap akurat dan mudah diperbarui.</p></div>
+        <div class="note-block"><span class="note-label">Flow</span><ol class="flow-list"><li>Tambah atau pilih produk.</li><li>Isi identitas, foto, harga, stok, dan kecocokan.</li><li>Simpan perubahan ke katalog.</li></ol></div>
+      </aside>
+    </div>
+    <span class="page-no">10</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">Admin 04</p><h2>Monitoring pesanan</h2></div>
+      <span class="status admin">Modul aktif - data contoh</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/admin-orders.png" alt="Daftar pesanan"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Isi layar</span><h3>Daftar transaksi</h3><p>Total pesanan, perlu diproses, siap kirim, nilai pesanan, filter, pelanggan, motor, jumlah item, status, dan tanggal.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Memusatkan pemantauan pesanan agar progres layanan dapat dilihat oleh tim.</p></div>
+        <div class="note-block"><span class="note-label">Flow status</span><ol class="flow-list"><li>Baru.</li><li>Diproses.</li><li>Siap Kirim.</li><li>Selesai.</li></ol></div>
+      </aside>
+    </div>
+    <span class="page-no">11</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">Admin 05</p><h2>Moderasi ulasan produk</h2></div>
+      <span class="status admin">Modul aktif - data contoh</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/admin-reviews.png" alt="Moderasi ulasan"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Isi layar</span><h3>Kontrol kualitas ulasan</h3><p>Filter status dan rating, isi komentar, tanggal, balasan admin, serta aksi setujui, sembunyikan, tolak, atau hapus.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Menjaga komentar yang tampil tetap relevan, rapi, dan membantu keputusan pembelian.</p></div>
+        <div class="note-block"><span class="note-label">Flow</span><ol class="flow-list"><li>Ulasan masuk sebagai menunggu cek.</li><li>Admin membaca dan memberi balasan bila perlu.</li><li>Status ditetapkan dan hasilnya tampil di produk.</li></ol></div>
+      </aside>
+    </div>
+    <span class="page-no">12</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">Admin 06</p><h2>Pengaturan isi aplikasi</h2></div>
+      <span class="status admin">Modul aktif - data contoh</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/admin-settings.png" alt="Pengaturan aplikasi"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Isi layar</span><h3>Parameter tampilan</h3><p>Nama toko, tagline, judul halaman, logo, ikon, teks, pesan WhatsApp, status aktif, dan visibilitas publik.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Memungkinkan perubahan konten utama tanpa mengubah struktur halaman.</p></div>
+        <div class="note-block"><span class="note-label">Flow</span><ol class="flow-list"><li>Pilih atau tambah parameter.</li><li>Ubah nilai dan status.</li><li>Konten publik mengikuti pengaturan aktif.</li></ol></div>
+      </aside>
+    </div>
+    <span class="page-no">13</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">Admin 07</p><h2>Pengelolaan akun tim</h2></div>
+      <span class="status admin">Modul aktif - data contoh</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/admin-users.png" alt="Daftar akun tim"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Isi layar</span><h3>Identitas pengguna</h3><p>Nama, username, email, telepon, peran, hak akses, status akun, dan penetapan admin WhatsApp.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Mengelola siapa yang dapat bekerja di panel admin dan siapa yang menerima komunikasi pelanggan.</p></div>
+        <div class="note-block"><span class="note-label">Flow</span><ol class="flow-list"><li>Tambah atau pilih akun.</li><li>Tetapkan peran dan kelompok akses.</li><li>Aktifkan akun atau admin WhatsApp.</li></ol></div>
+      </aside>
+    </div>
+    <span class="page-no">14</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">Admin 08</p><h2>Kelompok kerja dan hak akses</h2></div>
+      <span class="status admin">Modul aktif - data contoh</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/admin-access.png" alt="Daftar hak akses"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Isi layar</span><h3>Level akses tim</h3><p>Administrator, admin penjualan, admin katalog, kode level, deskripsi tugas, status, dan tanggal perubahan.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Mengelompokkan tim berdasarkan tanggung jawab agar menu kerja tetap terarah.</p></div>
+        <div class="note-block"><span class="note-label">Flow</span><ol class="flow-list"><li>Buat kelompok kerja.</li><li>Isi kode, deskripsi, dan status.</li><li>Hubungkan level ke akun yang sesuai.</li></ol></div>
+      </aside>
+    </div>
+    <span class="page-no">15</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">Rancangan Pengembangan</p><h2>Flow e-commerce dari produk sampai pesanan</h2></div>
+      <span class="status concept">Rancangan e-commerce</span>
+    </div>
+    <div class="journey">
+      <article class="journey-step"><span class="number">1</span><h3>Pilih Produk</h3><p>Pelanggan membuka detail dan menentukan jumlah barang.</p></article>
+      <article class="journey-step"><span class="number">2</span><h3>Kelola Keranjang</h3><p>Produk, jumlah, stok, dan subtotal diperiksa kembali.</p></article>
+      <article class="journey-step"><span class="number">3</span><h3>Checkout</h3><p>Pelanggan mengisi data, alamat, dan pengiriman.</p></article>
+      <article class="journey-step green"><span class="number">4</span><h3>Sesi Pembayaran</h3><p>Aplikasi membuat order dan sesi/token gateway.</p></article>
+      <article class="journey-step green"><span class="number">5</span><h3>Bayar di Gateway</h3><p>Pilih QRIS, virtual account, e-wallet, atau gerai.</p></article>
+      <article class="journey-step green"><span class="number">6</span><h3>Status Lunas</h3><p>Notifikasi gateway memperbarui status pesanan.</p></article>
+    </div>
+    <div class="journey-note">
+      <div><strong>Payment provider</strong><p>Implementasi dapat memakai Xendit Payment Session atau Midtrans Snap dengan pola hosted checkout.</p></div>
+      <div><strong>WhatsApp tetap tersedia</strong><p>Komunikasi admin menjadi bantuan dan notifikasi progres, bukan verifikasi pembayaran utama.</p></div>
+    </div>
+    <span class="page-no">16</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">E-commerce 01</p><h2>Detail produk dengan aksi keranjang</h2></div>
+      <span class="status concept">Rancangan</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/concept-detail.png" alt="Rancangan detail produk dengan keranjang"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Tambahan isi</span><h3>Kontrol transaksi</h3><p>Pemilih jumlah, Tambah ke Keranjang, Beli Sekarang, indikator isi keranjang, dan bantuan WhatsApp.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Memberi pilihan antara menyimpan produk, membeli langsung, atau berkonsultasi.</p></div>
+        <div class="note-block"><span class="note-label">Flow</span><ol class="flow-list"><li>Pilih jumlah produk.</li><li>Tambah ke keranjang atau beli sekarang.</li><li>Sistem membawa pilihan ke tahap berikutnya.</li></ol></div>
+      </aside>
+    </div>
+    <span class="page-no">17</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">E-commerce 02</p><h2>Keranjang belanja</h2></div>
+      <span class="status concept">Rancangan</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/concept-cart.png" alt="Rancangan keranjang belanja"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Isi layar</span><h3>Daftar pilihan pelanggan</h3><p>Produk, kode, kecocokan, stok, jumlah, harga per item, subtotal, voucher, dan estimasi ongkir.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Menggabungkan beberapa produk dan mencegah pelanggan menyusun pesanan secara manual.</p></div>
+        <div class="note-block"><span class="note-label">Flow</span><ol class="flow-list"><li>Ubah jumlah atau hapus item.</li><li>Periksa total sementara.</li><li>Lanjut ke checkout atau konsultasi WhatsApp.</li></ol></div>
+      </aside>
+    </div>
+    <span class="page-no">18</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">E-commerce 03</p><h2>Checkout dan pengiriman</h2></div>
+      <span class="status concept">Rancangan</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/concept-checkout.png" alt="Rancangan checkout"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Isi layar</span><h3>Data pembelian</h3><p>Nama, WhatsApp, email, tipe motor, alamat, metode pengiriman, total akhir, dan informasi payment gateway.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Mengubah isi keranjang menjadi order yang terstruktur sebelum masuk ke halaman pembayaran.</p></div>
+        <div class="note-block"><span class="note-label">Flow</span><ol class="flow-list"><li>Lengkapi data pembeli.</li><li>Pilih metode pengiriman.</li><li>Periksa total akhir.</li><li>Lanjut ke payment gateway.</li></ol></div>
+      </aside>
+    </div>
+    <span class="page-no">19</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">E-commerce 04</p><h2>Pembayaran melalui Xendit atau Midtrans</h2></div>
+      <span class="status concept">Rancangan payment gateway</span>
+    </div>
+    <div class="walkthrough">
+      <div class="chrome"><img src="portfolio-assets/concept-payment.png" alt="Rancangan hosted checkout payment gateway"></div>
+      <aside class="notes">
+        <div class="note-block"><span class="note-label">Isi layar</span><h3>Hosted checkout</h3><p>Nomor order, total, batas pembayaran, QRIS, virtual account, e-wallet, gerai retail, dan tombol bayar.</p></div>
+        <div class="note-block"><span class="note-label">Tujuan</span><p>Memproses pembayaran melalui halaman aman milik Xendit Payment Session atau Midtrans Snap.</p></div>
+        <div class="note-block"><span class="note-label">Flow</span><ol class="flow-list"><li>Aplikasi membuat sesi atau token pembayaran.</li><li>Pelanggan memilih metode dan membayar.</li><li>Gateway mengirim status transaksi ke aplikasi.</li><li>Order ditandai lunas setelah status diterima.</li></ol></div>
+      </aside>
+    </div>
+    <span class="page-no">20</span>
+  </section>
+
+  <section class="slide">
+    <div class="slide-head">
+      <div><p class="kicker">E-commerce 05</p><h2>Pembayaran berhasil dan pesanan diproses</h2></div>
+      <span class="status concept">Rancangan</span>
+    </div>
+    <div class="final-grid">
+      <div class="chrome"><img src="portfolio-assets/concept-success.png" alt="Rancangan pembayaran berhasil"></div>
+      <aside class="final-copy">
+        <div>
+          <h3>End-to-end result</h3>
+          <p>Pesanan memiliki identitas, total, referensi pembayaran, serta status lunas yang diterima otomatis dari payment gateway.</p>
+        </div>
+        <div class="mini-flow">
+          <div><span>1</span><strong>Nomor pesanan dibuat</strong></div>
+          <div><span>2</span><strong>Sesi/token gateway dibuat</strong></div>
+          <div><span>3</span><strong>Pelanggan menyelesaikan pembayaran</strong></div>
+          <div><span>4</span><strong>Status pembayaran diterima aplikasi</strong></div>
+          <div><span>5</span><strong>Order lunas diproses admin</strong></div>
+        </div>
+        <div class="flow-result"><strong>WhatsApp sebagai pendamping</strong><p>WhatsApp tetap tersedia untuk bantuan dan informasi pengiriman, sedangkan validasi pembayaran berasal dari gateway.</p></div>
+      </aside>
+    </div>
+    <span class="page-no">21</span>
+  </section>
+</body>
+</html>

@@ -22,6 +22,7 @@ import {
   AdminTablePagination,
   AdminTableShell,
 } from "@/shared/ui/admin-table";
+import { AppLoadingCard } from "@/shared/ui/app-loading";
 
 const orderStatusOptions: OrderStatus[] = [
   "Baru",
@@ -83,22 +84,30 @@ function AdminOrdersPageContent() {
     allowedRoles: ["admin"],
   });
   const [orders, setOrders] = useState<Order[]>([]);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const resolvedSearchParams = Object.fromEntries(
     searchParams.entries(),
   ) as SearchParamsRecord;
 
   const loadOrders = useCallback(async () => {
     if (!token?.trim()) {
+      setHasLoaded(true);
       return;
     }
 
-    setOrders(await getAdminOrders(token));
+    try {
+      setOrders(await getAdminOrders(token));
+    } finally {
+      setHasLoaded(true);
+    }
   }, [token]);
 
   useEffect(() => {
     if (!isAllowed) {
       return;
     }
+
+    setHasLoaded(false);
 
     const loadTimer = window.setTimeout(() => {
       void loadOrders();
@@ -109,11 +118,25 @@ function AdminOrdersPageContent() {
     };
   }, [isAllowed, loadOrders]);
 
-  if (!isReady || !isAllowed) {
+  if (!isReady) {
     return (
-      <div className="surface-panel rounded-[1.8rem] p-6 text-sm text-ink-soft">
-        Memuat daftar pesanan...
-      </div>
+      <AppLoadingCard
+        title="Memuat daftar pesanan"
+        description="Daftar order, status terbaru, dan nilai transaksi sedang disiapkan."
+      />
+    );
+  }
+
+  if (!isAllowed) {
+    return null;
+  }
+
+  if (!hasLoaded) {
+    return (
+      <AppLoadingCard
+        title="Memuat daftar pesanan"
+        description="Daftar order, status terbaru, dan nilai transaksi sedang disiapkan."
+      />
     );
   }
 

@@ -3,6 +3,16 @@ import type { Product } from "@/entities/product/model/types";
 import { backendFetchJson } from "@/shared/api/backend-client";
 import { getPublicBackendBaseUrl } from "@/shared/config/public-env";
 
+export type AdminMostViewedProduct = {
+  productId: string;
+  productSlug: string;
+  productName: string;
+  productImage?: string;
+  productBrand: string;
+  viewCount: number;
+  lastViewedAt?: string;
+};
+
 export type AdminOverview = {
   metrics: Array<{
     label: string;
@@ -16,6 +26,7 @@ export type AdminOverview = {
     label: string;
     total: number;
   }>;
+  mostViewedProducts: AdminMostViewedProduct[];
   source: "mock" | "backend";
   backendAvailable: boolean;
 };
@@ -51,6 +62,7 @@ function buildEmptyOverview(backendAvailable: boolean): AdminOverview {
     lowStockProducts: [],
     recentOrders: [],
     categoryShare: [],
+    mostViewedProducts: [],
     source: "backend",
     backendAvailable,
   };
@@ -70,6 +82,9 @@ export async function getAdminOverview(token: string | null | undefined) {
 
     return {
       ...response,
+      mostViewedProducts: Array.isArray(response.mostViewedProducts)
+        ? response.mostViewedProducts
+        : [],
       source: "backend" as const,
       backendAvailable: true,
     };

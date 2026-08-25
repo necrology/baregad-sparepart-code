@@ -1,3 +1,4 @@
+import { AppLoadingCard } from "@/shared/ui/app-loading";
 import { Container } from "@/shared/ui/container";
 
 export default function CatalogLoading() {
@@ -6,7 +7,12 @@ export default function CatalogLoading() {
       <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <div className="surface-panel h-[28rem] animate-pulse rounded-[2rem]" />
         <div className="space-y-5">
-          <div className="surface-panel h-28 animate-pulse rounded-[2rem]" />
+          <AppLoadingCard
+            compact
+            eyebrow="Menyusun katalog"
+            title="Filter dan produk sedang dimuat"
+            description="Kami sedang mengambil kategori, kendaraan, dan stok terbaru agar katalog tetap akurat."
+          />
           <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
               <div

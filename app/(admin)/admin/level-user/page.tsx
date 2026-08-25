@@ -31,6 +31,7 @@ import {
   AdminTablePagination,
   AdminTableShell,
 } from "@/shared/ui/admin-table";
+import { AppLoadingCard } from "@/shared/ui/app-loading";
 import { AdminBusyOverlay } from "@/shared/ui/admin-busy-overlay";
 import { AdminIconButton, AdminIconLink } from "@/shared/ui/admin-icon-action";
 import { AdminModal } from "@/shared/ui/admin-modal";
@@ -104,20 +105,28 @@ function AdminUserLevelsPageContent() {
     title: string;
     description?: string;
   } | null>(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const resolvedSearchParams = toSearchParamsRecord(searchParams.entries());
 
   const loadLevels = useCallback(async () => {
     if (!token?.trim()) {
+      setHasLoaded(true);
       return;
     }
 
-    setLevels(await getAdminUserLevels(token));
+    try {
+      setLevels(await getAdminUserLevels(token));
+    } finally {
+      setHasLoaded(true);
+    }
   }, [token]);
 
   useEffect(() => {
     if (!isAllowed) {
       return;
     }
+
+    setHasLoaded(false);
 
     const loadTimer = window.setTimeout(() => {
       void loadLevels();
@@ -199,11 +208,25 @@ function AdminUserLevelsPageContent() {
     );
   }
 
-  if (!isReady || !isAllowed) {
+  if (!isReady) {
     return (
-      <div className="surface-panel rounded-[1.8rem] p-6 text-sm text-ink-soft">
-        Sedang menyiapkan daftar hak akses...
-      </div>
+      <AppLoadingCard
+        title="Sedang menyiapkan daftar hak akses"
+        description="Daftar level, status akses, dan detail perizinan sedang dimuat."
+      />
+    );
+  }
+
+  if (!isAllowed) {
+    return null;
+  }
+
+  if (!hasLoaded) {
+    return (
+      <AppLoadingCard
+        title="Sedang menyiapkan daftar hak akses"
+        description="Daftar level, status akses, dan detail perizinan sedang dimuat."
+      />
     );
   }
 

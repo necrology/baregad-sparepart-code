@@ -1,5 +1,6 @@
 import { getPublicBackendBaseUrl } from "@/shared/config/public-env";
 import { buildSearchParams, type QueryRecord } from "@/shared/lib/query";
+import { dispatchNetworkActivity } from "@/shared/runtime/network-activity";
 
 type BackendFetchOptions = Omit<RequestInit, "body"> & {
   json?: unknown;
@@ -7,6 +8,7 @@ type BackendFetchOptions = Omit<RequestInit, "body"> & {
   query?: QueryRecord;
   token?: string | null;
   timeoutMs?: number;
+  trackActivity?: boolean;
 };
 
 export class BackendRequestError extends Error {
@@ -70,6 +72,7 @@ export async function backendFetchJson<T>(
     json,
     formData,
     token,
+    trackActivity = true,
     headers,
     ...requestInit
   } = options;
@@ -78,6 +81,12 @@ export async function backendFetchJson<T>(
 
   if (hasJsonBody && hasFormDataBody) {
     throw new Error("Backend request cannot send json and formData together.");
+  }
+
+  const shouldTrackActivity = typeof window !== "undefined" && trackActivity;
+
+  if (shouldTrackActivity) {
+    dispatchNetworkActivity(1);
   }
 
   try {
@@ -117,5 +126,9 @@ export async function backendFetchJson<T>(
     return payload as T;
   } finally {
     clearTimeout(timeout);
+
+    if (shouldTrackActivity) {
+      dispatchNetworkActivity(-1);
+    }
   }
 }

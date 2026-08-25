@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import type { PublicAppConfig } from "@/shared/config/app";
 import type { AdminSession } from "@/shared/auth/admin-auth";
@@ -257,10 +257,17 @@ export function AdminShell({ session, branding, children }: AdminShellProps) {
   const normalizedPathname =
     pathname !== "/" ? pathname.replace(/\/+$/, "") || "/" : pathname;
   const { logout } = useAdminSession();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mobileMenuPathname, setMobileMenuPathname] = useState<string | null>(null);
+  const isMobileMenuOpen = mobileMenuPathname === normalizedPathname;
 
   function toggleMobileMenu() {
-    setIsMobileMenuOpen((currentValue) => !currentValue);
+    setMobileMenuPathname((currentValue) =>
+      currentValue === normalizedPathname ? null : normalizedPathname,
+    );
+  }
+
+  function closeMobileMenu() {
+    setMobileMenuPathname(null);
   }
 
   function handleLogout() {
@@ -268,8 +275,25 @@ export function AdminShell({ session, branding, children }: AdminShellProps) {
     window.location.replace(withAppPath("/admin-login"));
   }
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+
+    function syncMenuState(event: MediaQueryList | MediaQueryListEvent) {
+      if (event.matches) {
+        setMobileMenuPathname(null);
+      }
+    }
+
+    syncMenuState(mediaQuery);
+    mediaQuery.addEventListener("change", syncMenuState);
+
+    return () => {
+      mediaQuery.removeEventListener("change", syncMenuState);
+    };
+  }, []);
+
   return (
-    <div key={pathname} className="min-h-screen overflow-x-hidden pb-3">
+    <div className="min-h-screen overflow-x-hidden pb-3">
       <aside className="hidden lg:fixed lg:inset-y-3 lg:left-3 lg:z-40 lg:block lg:w-[252px]">
         <AdminSidebar
           session={session}
@@ -284,7 +308,7 @@ export function AdminShell({ session, branding, children }: AdminShellProps) {
           <button
             type="button"
             aria-label="Tutup menu"
-            onClick={() => setIsMobileMenuOpen(false)}
+            onClick={closeMobileMenu}
             className="absolute inset-0 bg-[#0d1622]/52 backdrop-blur-[3px]"
           />
           <div className="relative z-10 h-full w-[min(88vw,20rem)] p-3">
@@ -292,9 +316,9 @@ export function AdminShell({ session, branding, children }: AdminShellProps) {
               session={session}
               branding={branding}
               pathname={normalizedPathname}
-              onNavigate={() => setIsMobileMenuOpen(false)}
+              onNavigate={closeMobileMenu}
               onLogout={handleLogout}
-              onClose={() => setIsMobileMenuOpen(false)}
+              onClose={closeMobileMenu}
             />
           </div>
         </div>

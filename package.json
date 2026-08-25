@@ -5,11 +5,13 @@
   "scripts": {
     "dev": "node ./scripts/dev-local.mjs",
     "dev:root": "next dev",
-    "build": "node ./scripts/build-static.mjs",
+    "build": "node ./scripts/build-server.mjs",
     "build:next": "next build",
+    "build:server": "node ./scripts/build-server.mjs",
     "build:static": "node ./scripts/build-static.mjs",
     "build:static:local": "node ./scripts/build-static.mjs --local",
-    "start": "next start",
+    "start": "node ./.next/standalone/server.js",
+    "start:next": "next start",
     "lint": "eslint"
   },
   "dependencies": {
@@ -34,5 +36,9 @@
   "trustedDependencies": [
     "sharp",
     "unrs-resolver"
-  ]
+  ],
+  "optionalDependencies": {
+    "@tailwindcss/oxide-linux-x64-gnu": "^4.2.2",
+    "lightningcss-linux-x64-gnu": "^1.32.0"
+  }
 }

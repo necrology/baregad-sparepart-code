@@ -38,6 +38,7 @@ import { cn } from "@/shared/lib/cn";
 import { formatRupiah } from "@/shared/lib/currency";
 import { formatDate } from "@/shared/lib/date";
 import { buildToastHref } from "@/shared/lib/toast";
+import { AppLoadingCard } from "@/shared/ui/app-loading";
 import { AdminBusyOverlay } from "@/shared/ui/admin-busy-overlay";
 import { AdminIconButton, AdminIconLink } from "@/shared/ui/admin-icon-action";
 import { AdminModal } from "@/shared/ui/admin-modal";
@@ -332,21 +333,28 @@ function AdminProductsPageContent() {
     title: string;
     description?: string;
   } | null>(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [createFormVersion, setCreateFormVersion] = useState(0);
   const paramsRecord = toSearchParamsRecord(searchParams.entries());
   const categoryOptions = createSparepartCategoryOptions();
 
   const loadCatalog = useCallback(async () => {
-    const catalog = await getCatalog({ sort: "latest" });
-    setProducts(catalog.items);
-    setBrandOptions(catalog.options.brands);
-    setVehicleOptions(catalog.options.vehicles);
+    try {
+      const catalog = await getCatalog({ sort: "latest" });
+      setProducts(catalog.items);
+      setBrandOptions(catalog.options.brands);
+      setVehicleOptions(catalog.options.vehicles);
+    } finally {
+      setHasLoaded(true);
+    }
   }, []);
 
   useEffect(() => {
     if (!isAllowed) {
       return;
     }
+
+    setHasLoaded(false);
 
     const loadTimer = window.setTimeout(() => {
       void loadCatalog();
@@ -357,11 +365,25 @@ function AdminProductsPageContent() {
     };
   }, [isAllowed, loadCatalog]);
 
-  if (!isReady || !isAllowed) {
+  if (!isReady) {
     return (
-      <div className="surface-panel rounded-[1.8rem] p-6 text-sm text-ink-soft">
-        Sedang menyiapkan daftar barang...
-      </div>
+      <AppLoadingCard
+        title="Sedang menyiapkan daftar barang"
+        description="Produk, filter merek, kategori, dan kendaraan sedang dirapikan untuk admin."
+      />
+    );
+  }
+
+  if (!isAllowed) {
+    return null;
+  }
+
+  if (!hasLoaded) {
+    return (
+      <AppLoadingCard
+        title="Sedang menyiapkan daftar barang"
+        description="Produk, filter merek, kategori, dan kendaraan sedang dirapikan untuk admin."
+      />
     );
   }
 

@@ -1,10 +1,10 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { useBranding } from "@/shared/runtime/app-runtime-provider";
 import { Container } from "@/shared/ui/container";
 import { Logo } from "@/shared/ui/logo";
 import { StorefrontHeader } from "@/widgets/storefront/storefront-header";
+import { StorefrontWhatsAppFloat } from "@/widgets/storefront/storefront-whatsapp-float";
 
 type StorefrontShellProps = {
   children: React.ReactNode;
@@ -12,11 +12,11 @@ type StorefrontShellProps = {
 
 export function StorefrontShell({ children }: StorefrontShellProps) {
   const { branding } = useBranding();
-  const pathname = usePathname();
 
   return (
-    <div key={pathname} className="min-h-screen overflow-x-hidden">
-      <StorefrontHeader key={pathname} branding={branding} />
+    <div className="min-h-screen overflow-x-hidden">
+      <StorefrontHeader branding={branding} />
+      <StorefrontWhatsAppFloat branding={branding} />
 
       <main>{children}</main>
 

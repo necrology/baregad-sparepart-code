@@ -223,3 +223,107 @@ button.bg-ink:focus-visible {
   background: rgba(24, 47, 70, 0.42);
   backdrop-filter: blur(8px);
 }
+
+@keyframes app-loader-ring {
+  0% {
+    transform: scale(0.94);
+    opacity: 0.42;
+  }
+
+  60% {
+    transform: scale(1.04);
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: scale(0.94);
+    opacity: 0.42;
+  }
+}
+
+@keyframes app-loader-orbit {
+  0% {
+    transform: rotate(0deg) translateY(-18px) rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg) translateY(-18px) rotate(-360deg);
+  }
+}
+
+@keyframes app-loader-orbit-delay {
+  0% {
+    transform: rotate(180deg) translateY(-14px) rotate(-180deg);
+  }
+
+  100% {
+    transform: rotate(540deg) translateY(-14px) rotate(-540deg);
+  }
+}
+
+@keyframes app-loader-sheen {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(160%);
+  }
+}
+
+@keyframes app-loader-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.app-loader-ring {
+  animation: app-loader-ring 1800ms ease-in-out infinite;
+}
+
+.app-loader-ring-delay {
+  animation: app-loader-ring 1800ms ease-in-out infinite 180ms;
+}
+
+.app-loader-dot {
+  animation: app-loader-orbit 1600ms linear infinite;
+  transform-origin: center;
+}
+
+.app-loader-dot-delay {
+  animation: app-loader-orbit-delay 2200ms linear infinite;
+  transform-origin: center;
+}
+
+.app-loader-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.88),
+    transparent
+  );
+  animation: app-loader-sheen 2100ms linear infinite;
+}
+
+.app-loader-shimmer {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(228, 238, 248, 0.78) 0%,
+      rgba(255, 255, 255, 0.95) 50%,
+      rgba(228, 238, 248, 0.78) 100%
+    );
+  background-size: 220% 100%;
+  animation: app-loader-shimmer 1800ms linear infinite;
+}
+
+.app-loader-progress {
+  animation: app-loader-sheen 1200ms ease-in-out infinite;
+}

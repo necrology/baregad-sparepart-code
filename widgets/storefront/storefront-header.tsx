@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { PublicAppConfig } from "@/shared/config/app";
 import { storefrontNavigation } from "@/shared/config/navigation";
 import { Container } from "@/shared/ui/container";
@@ -19,7 +19,37 @@ export function StorefrontHeader({
   showAdminLogin = true,
 }: StorefrontHeaderProps) {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false);
+  const normalizedPathname =
+    pathname !== "/" ? pathname.replace(/\/+$/, "") || "/" : pathname;
+  const [mobileMenuPathname, setMobileMenuPathname] = useState<string | null>(null);
+  const isOpen = mobileMenuPathname === normalizedPathname;
+
+  function toggleMobileMenu() {
+    setMobileMenuPathname((currentValue) =>
+      currentValue === normalizedPathname ? null : normalizedPathname,
+    );
+  }
+
+  function closeMobileMenu() {
+    setMobileMenuPathname(null);
+  }
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+
+    function syncMenuState(event: MediaQueryList | MediaQueryListEvent) {
+      if (event.matches) {
+        setMobileMenuPathname(null);
+      }
+    }
+
+    syncMenuState(mediaQuery);
+    mediaQuery.addEventListener("change", syncMenuState);
+
+    return () => {
+      mediaQuery.removeEventListener("change", syncMenuState);
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-canvas/88 backdrop-blur-xl">
@@ -31,7 +61,9 @@ export function StorefrontHeader({
             {storefrontNavigation.map((item) => {
               const targetPath = item.href.split("?")[0];
               const isActive =
-                targetPath === "/" ? pathname === "/" : pathname.startsWith(targetPath);
+                targetPath === "/"
+                  ? normalizedPathname === "/"
+                  : normalizedPathname.startsWith(targetPath);
               const itemHref = item.href;
 
               return (
@@ -53,8 +85,8 @@ export function StorefrontHeader({
           <button
             type="button"
             aria-expanded={isOpen}
-            aria-label="Buka menu"
-            onClick={() => setIsOpen((value) => !value)}
+            aria-label={isOpen ? "Tutup menu" : "Buka menu"}
+            onClick={toggleMobileMenu}
             className="relative z-10 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-white/80 text-ink lg:hidden"
           >
             <span className="flex flex-col gap-1.5">
@@ -93,14 +125,16 @@ export function StorefrontHeader({
                 {storefrontNavigation.map((item) => {
                   const targetPath = item.href.split("?")[0];
                   const isActive =
-                    targetPath === "/" ? pathname === "/" : pathname.startsWith(targetPath);
+                    targetPath === "/"
+                      ? normalizedPathname === "/"
+                      : normalizedPathname.startsWith(targetPath);
                   const itemHref = item.href;
 
                   return (
                     <Link
                       key={item.href}
                       href={itemHref}
-                      onClick={() => setIsOpen(false)}
+                      onClick={closeMobileMenu}
                       className={`rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
                         isActive
                           ? "bg-brand text-white hover:text-white focus-visible:text-white"
@@ -114,7 +148,7 @@ export function StorefrontHeader({
                 {showAdminLogin ? (
                   <Link
                     href="/admin-login"
-                    onClick={() => setIsOpen(false)}
+                    onClick={closeMobileMenu}
                     className="inline-flex justify-center rounded-xl border border-brand-deep bg-brand px-3 py-2.5 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(56,110,156,0.18)] transition hover:bg-brand-deep hover:text-white focus-visible:text-white"
                   >
                     Login Admin

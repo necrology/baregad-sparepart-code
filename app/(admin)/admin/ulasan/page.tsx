@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -31,6 +32,7 @@ import {
   EyeOffIcon,
   TrashIcon,
 } from "@/shared/ui/app-icons";
+import { AppLoadingCard } from "@/shared/ui/app-loading";
 import { RatingStars } from "@/shared/ui/rating-stars";
 
 const statusLabelMap = {
@@ -77,25 +79,41 @@ function getStatusBadgeClass(status: ProductReview["status"]) {
 function AdminProductReviewsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token, isAllowed, isReady } = useAdminPageAccess({
+  const { session, token, isAllowed, isReady } = useAdminPageAccess({
     allowedRoles: ["admin"],
     allowedLevelCodes: ["admin", "admin-baregad"],
   });
   const [reviews, setReviews] = useState<ProductReview[]>([]);
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [replySavingId, setReplySavingId] = useState<string | null>(null);
   const paramsRecord = toSearchParamsRecord(searchParams.entries());
 
   const loadReviews = useCallback(async () => {
     if (!token?.trim()) {
+      setHasLoaded(true);
       return;
     }
 
-    setReviews(await getAdminProductReviews(token));
+    try {
+      const nextReviews = await getAdminProductReviews(token);
+      setReviews(nextReviews);
+      setReplyDrafts(
+        Object.fromEntries(
+          nextReviews.map((review) => [review.id, review.adminReply?.message ?? ""]),
+        ),
+      );
+    } finally {
+      setHasLoaded(true);
+    }
   }, [token]);
 
   useEffect(() => {
     if (!isAllowed) {
       return;
     }
+
+    setHasLoaded(false);
 
     const loadTimer = window.setTimeout(() => {
       void loadReviews();
@@ -143,11 +161,76 @@ function AdminProductReviewsPageContent() {
     }
   }
 
-  if (!isReady || !isAllowed) {
+  async function handleReply(review: ProductReview) {
+    if (!token?.trim()) {
+      router.replace(
+        buildToastHref("/admin/ulasan", {
+          message: "Sesi login tidak ditemukan.",
+          tone: "error",
+        }),
+      );
+      return;
+    }
+
+    const message = (replyDrafts[review.id] ?? "").trim();
+    if (!message) {
+      router.replace(
+        buildToastHref("/admin/ulasan", {
+          message: "Balasan admin wajib diisi.",
+          tone: "error",
+        }),
+      );
+      return;
+    }
+
+    try {
+      setReplySavingId(review.id);
+      await backendFetchJson(`/admin/product-reviews/${review.id}/reply`, {
+        method: "PUT",
+        token,
+        json: { message },
+      });
+      await loadReviews();
+      router.replace(
+        buildToastHref("/admin/ulasan", {
+          message: "Balasan ulasan berhasil disimpan.",
+          tone: "success",
+        }),
+      );
+    } catch (error) {
+      router.replace(
+        buildToastHref("/admin/ulasan", {
+          message:
+            error instanceof Error && error.message.trim()
+              ? error.message
+              : "Balasan ulasan belum bisa disimpan.",
+          tone: "error",
+        }),
+      );
+    } finally {
+      setReplySavingId(null);
+    }
+  }
+
+  if (!isReady) {
     return (
-      <div className="surface-panel rounded-[1.8rem] p-6 text-sm text-ink-soft">
-        Sedang menyiapkan daftar ulasan...
-      </div>
+      <AppLoadingCard
+        title="Sedang menyiapkan daftar ulasan"
+        description="Komentar pelanggan, status moderasi, dan rating sedang dipanggil."
+      />
+    );
+  }
+
+  if (!isAllowed) {
+    return null;
+  }
+
+  if (!hasLoaded) {
+    return (
+      <AppLoadingCard
+        title="Sedang menyiapkan daftar ulasan"
+        description="Komentar pelanggan, status moderasi, dan rating sedang dipanggil."
+      />
     );
   }
 
@@ -176,6 +259,9 @@ function AdminProductReviewsPageContent() {
             review.customerEmail,
             review.comment,
             review.adminNote,
+            review.adminReply?.message,
+            review.adminReply?.displayName,
+            review.adminReply?.username,
           ],
           q,
         )
@@ -292,13 +378,80 @@ function AdminProductReviewsPageContent() {
                       <RatingStars value={review.rating} size="sm" valueLabel={`${review.rating}/5`} />
                     </td>
                     <td className="px-4 py-3 text-ink-soft">
-                      <div className="min-w-[320px] space-y-2">
-                        <p className="leading-6">{review.comment}</p>
-                        {review.adminNote ? (
-                          <p className="rounded-[1rem] border border-line bg-white/70 px-3 py-2 text-xs">
-                            Catatan admin: {review.adminNote}
-                          </p>
-                        ) : null}
+                      <div className="min-w-[320px]">
+                        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_132px]">
+                          <div className="space-y-3">
+                            <p className="leading-6">{review.comment}</p>
+                            {review.adminNote ? (
+                              <p className="rounded-[1rem] border border-line bg-white/70 px-3 py-2 text-xs">
+                                Catatan admin: {review.adminNote}
+                              </p>
+                            ) : null}
+                            {review.adminReply ? (
+                              <div className="rounded-[1rem] border border-brand/20 bg-brand-soft/60 px-3 py-2.5 text-xs">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <span className="font-semibold text-brand-deep">
+                                    Balasan {review.adminReply.displayName}
+                                  </span>
+                                  <span>{formatDate(review.adminReply.repliedAt)}</span>
+                                </div>
+                                <p className="mt-2 leading-6 text-ink-soft">
+                                  {review.adminReply.message}
+                                </p>
+                              </div>
+                            ) : null}
+                            <div className="space-y-2">
+                              <textarea
+                                rows={3}
+                                value={replyDrafts[review.id] ?? ""}
+                                onChange={(event) =>
+                                  setReplyDrafts((currentValue) => ({
+                                    ...currentValue,
+                                    [review.id]: event.target.value,
+                                  }))
+                                }
+                                placeholder="Tulis balasan admin untuk komentar ini"
+                                className="w-full rounded-[1rem] border border-line bg-white/80 px-3 py-2.5 text-sm outline-none transition focus:border-brand"
+                              />
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <p className="text-xs text-muted">
+                                  Balas sebagai{" "}
+                                  {session
+                                    ? `${session.displayName} (@${session.username})`
+                                    : "akun login aktif"}
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => handleReply(review)}
+                                  disabled={replySavingId === review.id}
+                                  className="rounded-full border border-brand-deep bg-brand px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  {replySavingId === review.id
+                                    ? "Menyimpan..."
+                                    : review.adminReply
+                                      ? "Perbarui balasan"
+                                      : "Kirim balasan"}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          {review.photo ? (
+                            <div className="overflow-hidden rounded-[1rem] border border-line bg-white/80">
+                              <div className="relative aspect-square w-full">
+                                <Image
+                                  src={review.photo.url}
+                                  alt={`Foto ulasan dari ${review.customerName}`}
+                                  fill
+                                  sizes="132px"
+                                  className="object-cover object-center"
+                                />
+                              </div>
+                              <p className="px-3 py-2 text-[11px] font-semibold text-ink-soft">
+                                Foto ulasan
+                              </p>
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">

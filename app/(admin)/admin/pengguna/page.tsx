@@ -33,6 +33,7 @@ import {
   AdminTablePagination,
   AdminTableShell,
 } from "@/shared/ui/admin-table";
+import { AppLoadingCard } from "@/shared/ui/app-loading";
 import { AdminBusyOverlay } from "@/shared/ui/admin-busy-overlay";
 import {
   AdminIconButton,
@@ -123,26 +124,34 @@ function AdminUsersPageContent() {
     title: string;
     description?: string;
   } | null>(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const paramsRecord = toSearchParamsRecord(searchParams.entries());
 
   const loadData = useCallback(async () => {
     if (!token?.trim()) {
+      setHasLoaded(true);
       return;
     }
 
-    const [nextUsers, nextLevels] = await Promise.all([
-      getAdminUsers(token),
-      getAdminUserLevels(token),
-    ]);
+    try {
+      const [nextUsers, nextLevels] = await Promise.all([
+        getAdminUsers(token),
+        getAdminUserLevels(token),
+      ]);
 
-    setUsers(nextUsers);
-    setLevels(nextLevels);
+      setUsers(nextUsers);
+      setLevels(nextLevels);
+    } finally {
+      setHasLoaded(true);
+    }
   }, [token]);
 
   useEffect(() => {
     if (!isAllowed) {
       return;
     }
+
+    setHasLoaded(false);
 
     const loadTimer = window.setTimeout(() => {
       void loadData();
@@ -153,11 +162,25 @@ function AdminUsersPageContent() {
     };
   }, [isAllowed, loadData]);
 
-  if (!isReady || !isAllowed) {
+  if (!isReady) {
     return (
-      <div className="surface-panel rounded-[1.8rem] p-6 text-sm text-ink-soft">
-        Sedang menyiapkan daftar akun...
-      </div>
+      <AppLoadingCard
+        title="Sedang menyiapkan daftar akun"
+        description="Data pengguna, hak akses, dan admin WhatsApp sedang disinkronkan."
+      />
+    );
+  }
+
+  if (!isAllowed) {
+    return null;
+  }
+
+  if (!hasLoaded) {
+    return (
+      <AppLoadingCard
+        title="Sedang menyiapkan daftar akun"
+        description="Data pengguna, hak akses, dan admin WhatsApp sedang disinkronkan."
+      />
     );
   }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -7,6 +8,7 @@ import {
   getProductBySlug,
   getRelatedProducts,
 } from "@/entities/product/api/product-service";
+import { recordProductDetailView } from "@/entities/product/api/product-view-service";
 import { buildProductHref } from "@/entities/product/model/product-links";
 import type { Product } from "@/entities/product/model/types";
 import { ProductCard } from "@/entities/product/ui/product-card";
@@ -25,6 +27,7 @@ import { formatDate } from "@/shared/lib/date";
 import { buildProductInquiryMessage, buildWhatsAppUrl } from "@/shared/lib/whatsapp";
 import { Container } from "@/shared/ui/container";
 import { RatingStars } from "@/shared/ui/rating-stars";
+import { AppLoadingCard } from "@/shared/ui/app-loading";
 
 type ProductDetailState = {
   product: Product | null;
@@ -120,6 +123,14 @@ function ProductDetailPageContent() {
     document.title = `${state.product.name} | ${branding.appName}`;
   }, [branding.appName, state.product]);
 
+  useEffect(() => {
+    if (!state.product?.slug) {
+      return;
+    }
+
+    void recordProductDetailView(state.product.slug);
+  }, [state.product?.slug]);
+
   if (!slug) {
     return (
       <Container className="py-6">
@@ -145,9 +156,10 @@ function ProductDetailPageContent() {
   if (state.isLoading) {
     return (
       <Container className="py-6">
-        <div className="surface-panel rounded-[1.8rem] p-6 text-sm text-ink-soft">
-          Sedang menyiapkan detail produk...
-        </div>
+        <AppLoadingCard
+          title="Sedang menyiapkan detail produk"
+          description="Foto, spesifikasi, ulasan, dan opsi pembelian sedang dimuat untuk barang yang Anda pilih."
+        />
       </Container>
     );
   }
@@ -450,6 +462,34 @@ function ProductDetailPageContent() {
                       <p className="mt-3 text-sm leading-7 text-ink-soft sm:text-base">
                         {review.comment}
                       </p>
+                      {review.photo ? (
+                        <div className="mt-3 overflow-hidden rounded-[1rem] border border-line bg-white">
+                          <div className="relative aspect-[4/3] w-full">
+                            <Image
+                              src={review.photo.url}
+                              alt={`Foto ulasan dari ${review.customerName}`}
+                              fill
+                              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 420px"
+                              className="object-cover object-center"
+                            />
+                          </div>
+                        </div>
+                      ) : null}
+                      {review.adminReply ? (
+                        <div className="mt-3 rounded-[1rem] border border-brand/20 bg-brand-soft/60 px-3 py-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-sm font-semibold text-brand-deep">
+                              Balasan {review.adminReply.displayName}
+                            </p>
+                            <p className="text-xs text-ink-soft">
+                              {formatDate(review.adminReply.repliedAt)}
+                            </p>
+                          </div>
+                          <p className="mt-2 text-sm leading-7 text-ink-soft sm:text-base">
+                            {review.adminReply.message}
+                          </p>
+                        </div>
+                      ) : null}
                     </article>
                   ))}
                 </div>
